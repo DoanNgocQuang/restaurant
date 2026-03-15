@@ -16,8 +16,9 @@ Dự án áp dụng kiến trúc Multi-Page App (MPA) để đảm bảo không 
 ### 2. Các bước chạy dự án
 Mở Terminal và chạy lần lượt các lệnh sau:
 
-**Bước 1: Clone dự án về máy**
+****
 ```bash
+Bước 1: Clone dự án về máy
 git clone [https://github.com/ngothanhhai-123/Elite-Gourmet-.git](https://github.com/ngothanhhai-123/Elite-Gourmet-.git)
 cd Elite-Gourmet-
 Bước 2: Cài đặt thư viện (Dependencies)
