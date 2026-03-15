@@ -1,20 +1,36 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🍽️ L'Élite Gourmet - Frontend Project
 
-# Run and deploy your AI Studio app
+Dự án giao diện website nhà hàng cao cấp L'Élite Gourmet. Dự án sử dụng **Vite** để quản lý môi trường phát triển, bao gồm hai phần giao diện tách biệt: Trang dành cho Khách hàng và Trang Quản trị (Admin Dashboard).
 
-This contains everything you need to run your app locally.
+## 📂 Cấu trúc dự án nổi bật
 
-View your app in AI Studio: https://ai.studio/apps/8ca4239a-2117-4052-bced-d5dc0be3fc6d
+Dự án áp dụng kiến trúc Multi-Page App (MPA) để đảm bảo không xung đột tài nguyên giữa các khu vực:
+* **`/` (Thư mục gốc):** Chứa HTML, CSS, JS của giao diện khách hàng (Trang chủ, Menu, Giỏ hàng, Đặt bàn,...).
+* **`/admin`:** Chứa toàn bộ giao diện và tài nguyên (assets) độc lập của phân hệ Quản trị viên.
 
-## Run Locally
+## 🚀 Hướng dẫn cài đặt và chạy dự án (Local)
 
-**Prerequisites:**  Node.js
+### 1. Yêu cầu hệ thống (Prerequisites)
+Đảm bảo máy tính của bạn đã cài đặt sẵn [Node.js](https://nodejs.org/).
 
+### 2. Các bước chạy dự án
+Mở Terminal và chạy lần lượt các lệnh sau:
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+**Bước 1: Clone dự án về máy**
+```bash
+git clone [https://github.com/ngothanhhai-123/Elite-Gourmet-.git](https://github.com/ngothanhhai-123/Elite-Gourmet-.git)
+cd Elite-Gourmet-
+Bước 2: Cài đặt thư viện (Dependencies)
+
+Bash
+npm install
+Bước 3: Khởi động Dev Server
+
+Bash
+npm run dev
+🌐 Đường dẫn truy cập (Local URLs)
+Sau khi Dev Server khởi động thành công (thường chạy ở cổng 5173), bạn có thể truy cập qua trình duyệt:
+
+Trang Khách hàng (Client): http://localhost:5173/
+
+Trang Quản trị (Admin): http://localhost:5173/admin/
