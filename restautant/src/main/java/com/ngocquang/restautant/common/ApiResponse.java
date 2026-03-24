@@ -1,7 +1,11 @@
 package com.ngocquang.restautant.common;
 
-import lombok.*;
 import java.time.LocalDateTime;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
@@ -15,9 +19,13 @@ public class ApiResponse<T> {
     private LocalDateTime timestamp = LocalDateTime.now();
 
     public static <T> ApiResponse<T> success(T data, String message) {
+        return success(data, message, 200);
+    }
+
+    public static <T> ApiResponse<T> success(T data, String message, int code) {
         return ApiResponse.<T>builder()
                 .status("success")
-                .code(200)
+                .code(code)
                 .message(message)
                 .data(data)
                 .timestamp(LocalDateTime.now())

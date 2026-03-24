@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.ngocquang.restautant.modules.booking.entity.Booking;
+import com.ngocquang.restautant.modules.user.entity.User;
 
 @Entity
 @Table(name="orders")
@@ -31,7 +32,7 @@ public class Order {
     @Column(nullable = false,precision = 12,scale = 2)
     private BigDecimal total_amount;
 
-    public enum Status{Confirmed,Pending,Cancelled}
+    public enum Status{Cart,Confirmed,Pending,Cancelled}
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -43,4 +44,8 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="booking_id")
     private Booking booking;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="user_id")
+    private User user;
 }
