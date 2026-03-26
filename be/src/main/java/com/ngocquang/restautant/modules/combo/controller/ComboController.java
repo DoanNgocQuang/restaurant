@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 
 @Validated
 @RestController
-@RequestMapping("/combos")
+@RequestMapping("/api/combos")
 @RequiredArgsConstructor
 public class ComboController {
 

@@ -3,6 +3,7 @@ package com.ngocquang.restautant.modules.combo.service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -49,7 +50,7 @@ public class ComboService {
     }
 
     private void RequestToEntity(Combo combo, ComboRequest request) {
-        combo.setName(request.getName());
+        combo.setName(request.getName().trim());
         combo.setPrice(request.getPrice());
         combo.setDescription(request.getDescription());
         combo.setImageUrl(request.getImageUrl());
@@ -65,6 +66,38 @@ public class ComboService {
         for (ComboRequest.InputFood food : foods) {
             if (!foodIds.add(food.getFoodId())) {
                 throw new BadRequestException("A food item can only appear once in a combo");
+            }
+        }
+    }
+
+    private Set<Integer> extractFoodIds(List<ComboRequest.InputFood> foods) {
+        return foods.stream()
+                .map(ComboRequest.InputFood::getFoodId)
+                .collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    private Set<Integer> extractFoodIdsFromCombo(Integer comboId) {
+        return this.comboDetailRepository.findByComboId(comboId).stream()
+                .map(comboDetail -> comboDetail.getFood().getId())
+                .collect(Collectors.toCollection(TreeSet::new));
+    }
+
+    private void validateUniqueCombo(Integer currentComboId, ComboRequest request) {
+        String requestedName = request.getName().trim();
+        Set<Integer> requestedFoodIds = extractFoodIds(request.getFoods());
+
+        for (Combo existingCombo : this.comboRepository.findAll()) {
+            if (currentComboId != null && currentComboId.equals(existingCombo.getId())) {
+                continue;
+            }
+
+            if (existingCombo.getName() != null && existingCombo.getName().trim().equalsIgnoreCase(requestedName)) {
+                throw new BadRequestException("Combo name already exists: " + requestedName);
+            }
+
+            Set<Integer> existingFoodIds = extractFoodIdsFromCombo(existingCombo.getId());
+            if (existingFoodIds.equals(requestedFoodIds)) {
+                throw new BadRequestException("A combo with the same food list already exists");
             }
         }
     }
@@ -100,6 +133,7 @@ public class ComboService {
     @Transactional
     public ComboResponse createCombo(ComboRequest request) {
         validateFoods(request.getFoods());
+        validateUniqueCombo(null, request);
 
         Combo combo = new Combo();
         RequestToEntity(combo, request);
@@ -118,6 +152,7 @@ public class ComboService {
         Combo comboInDb = this.comboRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Combo not found with id: " + id));
 
+        validateUniqueCombo(id, request);
         RequestToEntity(comboInDb, request);
         Combo savedCombo = this.comboRepository.save(comboInDb);
 

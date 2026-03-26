@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 
 @Validated
 @RestController
-@RequestMapping("/vouchers")
+@RequestMapping("/api/vouchers")
 @RequiredArgsConstructor
 public class VoucherController {
 

@@ -2,13 +2,10 @@ package com.ngocquang.restautant.modules.user.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 
 @Validated
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -40,23 +37,9 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.success(userService.getUserById(id), "Fetched user successfully"));
     }
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<UserResponse>> create(@Valid @RequestBody UserRequest request) {
-        UserResponse userInDB = this.userService.createUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(userInDB, "Created user successfully", HttpStatus.CREATED.value()));
-    }
-
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<UserResponse>> update(@PathVariable Integer id,
             @Valid @RequestBody UserRequest request) {
-        this.userService.updateUser(id, request);
-        return ResponseEntity.ok(ApiResponse.success(userService.getUserById(id), "Updated user successfully"));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Object>> delete(@PathVariable Integer id) {
-        this.userService.deleteUserById(id);
-        return ResponseEntity.ok(ApiResponse.success(null, "Deleted user successfully"));
+        return ResponseEntity.ok(ApiResponse.success(userService.updateUser(id, request), "Updated user successfully"));
     }
 }
