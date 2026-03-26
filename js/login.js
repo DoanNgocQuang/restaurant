@@ -25,7 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem('token', data.data.token);
           localStorage.setItem('user', JSON.stringify(data.data.user));
           alert(data.message || 'Đăng nhập thành công!');
-          window.location.href = '/pages/index.html';
+          
+          if (data.data.user.role === 'ADMIN') {
+            window.location.href = '/admin/index.html';
+          } else {
+            window.location.href = '/pages/index.html';
+          }
         } else {
           alert(data.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin.');
         }
