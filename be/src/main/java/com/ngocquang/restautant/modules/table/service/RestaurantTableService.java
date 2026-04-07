@@ -22,18 +22,30 @@ public class RestaurantTableService {
     private TableResponse toResponse(resTable table) {
         return TableResponse.builder()
                 .id(table.getId())
+                .name(table.getName())
+                .description(table.getDescription())
                 .capacity(table.getCapacity())
                 .status(table.getStatus())
                 .build();
     }
 
     private void RequestToEntity(resTable table, TableRequest request) {
+        table.setName(request.getName());
+        table.setDescription(request.getDescription());
         table.setCapacity(request.getCapacity());
         table.setStatus(request.getStatus() != null ? request.getStatus() : resTable.Status.AVAILABLE);
     }
 
     public List<TableResponse> getAllTable() {
         return this.tableRepository.findAll().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<TableResponse> getAvailableTables(java.time.LocalDateTime bookingTime, int guests) {
+        java.time.LocalDateTime startTime = bookingTime.minusHours(2);
+        java.time.LocalDateTime endTime = bookingTime.plusHours(2);
+        return this.tableRepository.findAvailableTables(guests, startTime, endTime).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }

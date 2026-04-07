@@ -23,6 +23,13 @@ public class resTable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(nullable = false, length = 50)
+    private String name;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
+    @Lob
+    private String description;
+
     @Column(nullable = false)
     private int capacity;
 

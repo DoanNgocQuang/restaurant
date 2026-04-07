@@ -1,11 +1,20 @@
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
+import sirv from 'sirv';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      {
+        name: 'serve-admin-folder',
+        configureServer(server) {
+          server.middlewares.use('/admin', sirv(path.resolve(__dirname, '../admin'), { dev: true, single: false }));
+        }
+      }
+    ],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },

@@ -11,19 +11,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (heroActions) {
     if (isLoggedIn) {
       heroActions.innerHTML = `
-        <a href="/reservations.html" class="w-full sm:w-auto">
+        <a href="/pages/reservations.html" class="w-full sm:w-auto">
           <button class="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-11 px-8 text-white">Đặt chỗ ngay</button>
         </a>
-        <a href="/menu.html" class="w-full sm:w-auto">
+        <a href="/pages/menu.html" class="w-full sm:w-auto">
           <button class="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-white/20 bg-white/5 text-white backdrop-blur-sm hover:bg-white/10 h-11 px-8">Xem thực đơn</button>
         </a>
       `;
     } else {
       heroActions.innerHTML = `
-        <a href="/login.html" class="w-full sm:w-auto">
+        <a href="/pages/login.html" class="w-full sm:w-auto">
           <button class="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-11 px-8 text-white">Đăng nhập để đặt bàn</button>
         </a>
-        <a href="/menu.html" class="w-full sm:w-auto">
+        <a href="/pages/menu.html" class="w-full sm:w-auto">
           <button class="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-white/20 bg-white/5 text-white backdrop-blur-sm hover:bg-white/10 h-11 px-8">Xem thực đơn</button>
         </a>
       `;
@@ -35,14 +35,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (ctaActions) {
     if (isLoggedIn) {
       ctaActions.innerHTML = `
-        <a href="/reservations.html" class="w-full sm:w-auto">
+        <a href="/pages/reservations.html" class="w-full sm:w-auto">
           <button class="w-full sm:w-auto inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-white text-primary shadow-xl hover:bg-white/90 h-11 px-8">Đặt bàn của bạn</button>
         </a>
         <button class="w-full sm:w-auto inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-white/30 bg-white/10 text-white hover:bg-white/20 h-11 px-8">Gọi +1 (555) 0123</button>
       `;
     } else {
       ctaActions.innerHTML = `
-        <a href="/login.html" class="w-full sm:w-auto">
+        <a href="/pages/login.html" class="w-full sm:w-auto">
           <button class="w-full sm:w-auto inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-white text-primary shadow-xl hover:bg-white/90 h-11 px-8">Đăng nhập để đặt bàn</button>
         </a>
         <button class="w-full sm:w-auto inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-white/30 bg-white/10 text-white hover:bg-white/20 h-11 px-8">Gọi +1 (555) 0123</button>

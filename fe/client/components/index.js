@@ -17,7 +17,7 @@ export function renderNavbar() {
           <nav class="hidden md:flex items-center gap-8">
             <a href="/pages/index.html" class="text-sm font-medium transition-colors hover:text-primary ${currentPath === '/pages/index.html' || currentPath === '/pages/index.html' ? 'text-primary border-b-2 border-primary' : ''}">Trang chủ</a>
             <a href="/pages/menu.html" class="text-sm font-medium transition-colors hover:text-primary ${currentPath === '/pages/menu.html' ? 'text-primary border-b-2 border-primary' : ''}">Thực đơn</a>
-            ${isLoggedIn ? `<a href="/pages/reservations.html" class="text-sm font-medium transition-colors hover:text-primary ${currentPath === '/pages/reservations.html' ? 'text-primary border-b-2 border-primary' : ''}">Đặt bàn</a>` : ''}
+            <a href="/pages/reservations.html" class="text-sm font-medium transition-colors hover:text-primary ${currentPath === '/pages/reservations.html' ? 'text-primary border-b-2 border-primary' : ''}">Đặt bàn</a>
           </nav>
 
           <div class="flex items-center gap-4">

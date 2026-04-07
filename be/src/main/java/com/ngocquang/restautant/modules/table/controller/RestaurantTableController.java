@@ -35,6 +35,13 @@ public class RestaurantTableController {
         return ResponseEntity.ok(ApiResponse.success(this.tableService.getAllTable(), "Fetched tables successfully"));
     }
 
+    @GetMapping("/available")
+    public ResponseEntity<ApiResponse<List<TableResponse>>> getAvailableTables(
+            @org.springframework.web.bind.annotation.RequestParam("datetime") @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime datetime,
+            @org.springframework.web.bind.annotation.RequestParam(value = "guests", defaultValue = "1") int guests) {
+        return ResponseEntity.ok(ApiResponse.success(this.tableService.getAvailableTables(datetime, guests), "Fetched available tables successfully"));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TableResponse>> getById(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success(this.tableService.getTableById(id), "Fetched table successfully"));

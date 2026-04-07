@@ -13,6 +13,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TableResponse {
     private Integer id;
+    private String name;
+    private String description;
     private Integer capacity;
     private resTable.Status status;
 }
