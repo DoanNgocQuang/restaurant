@@ -94,38 +94,29 @@ function renderProfileContent() {
       </section>
     `;
   } else if (activeTab === 'orders') {
-    const orders = [
-      { date: '10/03/2026', total: '$103.00', items: 'Risotto Nấm Truffle (x1), Sườn Cừu Nướng (x1)', status: 'Đã giao', code: '#ORD-99812' },
-      { date: '01/02/2026', total: '$45.00', items: 'Risotto Nấm Truffle (x1)', status: 'Đã giao', code: '#ORD-99750' }
-    ];
     html = `
       <section class="bg-white dark:bg-primary/5 rounded-2xl p-8 border border-primary/10 shadow-xl animate-fade-in-up">
         <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Lịch sử đơn hàng
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="text-primary">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+            <path d="M3 6h18"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+          Lịch sử đơn hàng
         </h3>
-        <div class="space-y-4">
-          ${orders.map(order => `
-            <div class="p-4 rounded-xl border border-slate-200 dark:border-primary/10 flex flex-col md:flex-row justify-between items-center gap-4">
-              <div class="flex items-center gap-4">
-                <div class="size-12 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-primary/20 text-slate-500">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                </div>
-                <div>
-                  <h4 class="font-bold">${order.code} • ${order.date}</h4>
-                  <p class="text-sm text-slate-500 max-w-xs truncate" title="${order.items}">${order.items}</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-4">
-                <span class="font-bold text-primary">${order.total}</span>
-                <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-green-100 text-green-600">
-                  ${order.status}
-                </span>
-              </div>
-            </div>
-          `).join('')}
+
+        <div id="order-list" class="space-y-4">
+          <p class="text-slate-400">Đang tải...</p>
         </div>
       </section>
     `;
+
+    contentContainer.innerHTML = html;
+
+    loadOrders();
   } else if (activeTab === 'offers') {
     const offers = [
       { title: 'Giảm 20% Tháng Sinh Nhật', desc: 'Áp dụng cho hóa đơn trên $100', expiry: '31/03/2026', code: 'BDAY2026' },
@@ -280,3 +271,76 @@ document.addEventListener('DOMContentLoaded', () => {
     renderProfileContent();
   });
 });
+
+async function loadOrders() {
+  const container = document.getElementById('order-list');
+  const token = localStorage.getItem('token');
+
+  try {
+    const res = await fetch('http://localhost:8080/api/orders/my-orders', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message);
+
+    const orders = json.data;
+
+    if (!orders.length) {
+      container.innerHTML = `<p class="text-slate-400">Bạn chưa có đơn hàng nào</p>`;
+      return;
+    }
+
+    container.innerHTML = orders.map(order => {
+
+      const d = new Date(order.createdAt);
+      const date = d.toLocaleDateString('vi-VN') + ' ' +
+                   d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+      const items = order.orderDetails.map(i =>
+        i.foodId ? `Food x${i.quantity}` : `Combo x${i.quantity}`
+      ).join(', ');
+
+      let statusClass = 'bg-gray-100 text-gray-600';
+      if (order.status === 'PENDING') statusClass = 'bg-yellow-100 text-yellow-600';
+      if (order.status === 'CONFIRMED') statusClass = 'bg-green-100 text-green-600';
+      if (order.status === 'CANCELLED') statusClass = 'bg-red-100 text-red-600';
+
+      return `
+        <div class="p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition flex flex-col md:flex-row justify-between gap-4">
+
+          <div class="flex items-center gap-4">
+            <div class="size-12 rounded-lg flex items-center justify-center bg-primary/20 text-primary">
+              🧾
+            </div>
+
+            <div>
+              <h4 class="font-bold text-white">
+                #ORD-${order.id} • ${date}
+              </h4>
+
+              <p class="text-sm text-slate-400 max-w-xs truncate">
+                ${items}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4 justify-between md:justify-end">
+            <span class="font-bold text-primary text-lg">
+              $${order.totalAmount}
+            </span>
+
+            <span class="px-3 py-1 rounded-full text-xs font-bold uppercase ${statusClass}">
+              ${order.status}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+  } catch (err) {
+    container.innerHTML = `<p class="text-red-500">Lỗi load đơn hàng</p>`;
+  }
+}

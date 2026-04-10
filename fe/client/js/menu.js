@@ -1,73 +1,297 @@
 import { renderNavbar, renderFooter } from '../components/index.js';
 
-const menuData = [
-  {
-    category: "Món Chính",
-    items: [
-      { name: "Risotto Nấm Truffle", price: "$45.00", desc: "Gạo arborio kem, nấm rừng tự nhiên, nấm truffle đen bào tươi và phô mai Parmigiano-Reggiano 24 tháng tuổi.", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBOKAbFwjhdeYGa_zfUZssFuxNvLKazIRPHJuLrs3y70909v-5IlHpYCmkmT_m4fCSnklrrJLLR94O7npEjoEfcKD5JXOgrtFxv-1jwU7qK1bg94Hj9MY1lo2gpmdUKgl5U26tTTAgIfqQhqXZLN4Wrl7hCpFSHIO5cbrrFNxKPiNA130tmQeB0UswQg2cyQMHEbC4Gyx9PyG_RyDKyVidFL0vPjnALGh71GBgvTT7KzPOo4-SmEuXkdJtbh-BQYOU86BL-uBVbH0hO" },
-      { name: "Sườn Cừu Nướng Thảo Mộc", price: "$58.00", desc: "Cừu ăn cỏ, lớp vỏ hạt dẻ cười và thảo mộc, đậu nghiền bạc hà và sốt balsamic giảm.", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBOKAbFwjhdeYGa_zfUZssFuxNvLKazIRPHJuLrs3y70909v-5IlHpYCmkmT_m4fCSnklrrJLLR94O7npEjoEfcKD5JXOgrtFxv-1jwU7qK1bg94Hj9MY1lo2gpmdUKgl5U26tTTAgIfqQhqXZLN4Wrl7hCpFSHIO5cbrrFNxKPiNA130tmQeB0UswQg2cyQMHEbC4Gyx9PyG_RyDKyVidFL0vPjnALGh71GBgvTT7KzPOo4-SmEuXkdJtbh-BQYOU86BL-uBVbH0hO" },
-      { name: "Bò Wagyu Rossini", price: "$85.00", desc: "Thịt bò Wagyu hạng A5, gan ngỗng áp chảo, bánh mì brioche nướng và sốt rượu Madeira.", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBOKAbFwjhdeYGa_zfUZssFuxNvLKazIRPHJuLrs3y70909v-5IlHpYCmkmT_m4fCSnklrrJLLR94O7npEjoEfcKD5JXOgrtFxv-1jwU7qK1bg94Hj9MY1lo2gpmdUKgl5U26tTTAgIfqQhqXZLN4Wrl7hCpFSHIO5cbrrFNxKPiNA130tmQeB0UswQg2cyQMHEbC4Gyx9PyG_RyDKyVidFL0vPjnALGh71GBgvTT7KzPOo4-SmEuXkdJtbh-BQYOU86BL-uBVbH0hO" }
-    ]
-  },
-  {
-    category: "Hải Sản",
-    items: [
-      { name: "Sò Điệp Áp Chảo", price: "$52.00", desc: "Sò điệp Hokkaido, kem súp lơ, thịt ba chỉ giòn và sốt nhũ tương cam quýt.", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAPbPwEoVecZ_rYNU_2sgKm1P_uysVPkpRYp6vLxGV_nX4T9Mgs7q9e-OQ2NviFlm9dMOS76RexHzPdU-Hl0t_bz9k7luVHkPkbtJtah6D7SrFV2w73qT4dmIzQOuQr5q1yP2x8-tpVkSz8GXodl7ydevcdXJVQausWxoMS3NOaiMSsGE5x--s9PXNGTWkIq3tUandhDyrSw6ZmUBjuISow1zOU19NUK9ZZjtjzsKh2E_AOUyxayaWIHRPneE3V5b7Xyr8zkkIfjloM" },
-      { name: "Cá Chẽm Chile Hoang Dã", price: "$64.00", desc: "Cá chẽm sốt miso, cải thìa, nước dùng dashi gừng và dầu mè.", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAPbPwEoVecZ_rYNU_2sgKm1P_uysVPkpRYp6vLxGV_nX4T9Mgs7q9e-OQ2NviFlm9dMOS76RexHzPdU-Hl0t_bz9k7luVHkPkbtJtah6D7SrFV2w73qT4dmIzQOuQr5q1yP2x8-tpVkSz8GXodl7ydevcdXJVQausWxoMS3NOaiMSsGE5x--s9PXNGTWkIq3tUandhDyrSw6ZmUBjuISow1zOU19NUK9ZZjtjzsKh2E_AOUyxayaWIHRPneE3V5b7Xyr8zkkIfjloM" }
-    ]
-  }
-];
+const API = 'http://localhost:8080/api';
 
+/* ================= TOKEN ================= */
+const getToken = () => localStorage.getItem('token');
+
+/* ================= INIT ================= */
 document.addEventListener('DOMContentLoaded', () => {
   renderNavbar();
   renderFooter();
-
-  const menuContainer = document.getElementById('menu-container');
-  if (menuContainer) {
-    menuContainer.innerHTML = menuData.map((section, idx) => `
-      <section class="scroll-mt-32">
-        <div class="flex items-center gap-4 mb-10">
-          <h3 class="text-3xl font-bold text-primary">${section.category}</h3>
-          <div class="h-[1px] flex-1 bg-primary/20"></div>
-        </div>
-        <div class="grid lg:grid-cols-2 gap-12">
-          <div class="space-y-8">
-            ${section.items.map((item, i) => `
-              <div class="group flex justify-between items-start gap-4 border-b border-primary/10 pb-6 animate-fade-in-up" style="animation-delay: ${i * 100}ms">
-                <div class="space-y-1">
-                  <h4 class="text-lg font-bold group-hover:text-primary transition-colors">${item.name}</h4>
-                  <p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">${item.desc}</p>
-                  <button class="add-to-cart-btn mt-3 gap-2 uppercase tracking-wider text-xs inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground h-8 px-3 py-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                    Thêm vào giỏ
-                  </button>
-                </div>
-                <span class="text-lg font-medium text-primary">${item.price}</span>
-              </div>
-            `).join('')}
-          </div>
-          <div class="rounded-xl overflow-hidden h-[400px]">
-            <img 
-              src="${section.items[0].img}" 
-              alt="${section.category}" 
-              class="h-full w-full object-cover"
-              referrerpolicy="no-referrer"
-            />
-          </div>
-        </div>
-      </section>
-    `).join('');
-
-    // Add event listeners for Add to Cart buttons
-    document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-        if (!isLoggedIn) {
-          window.location.href = '/pages/login.html';
-          return;
-        }
-        alert('Đã thêm vào giỏ hàng!');
-      });
-    });
-  }
+  renderHome();
 });
+
+/* ================= HELPERS ================= */
+const get = (id) => document.getElementById(id);
+
+const fetchAPI = async (url) => {
+  const res = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(getToken() && {
+        Authorization: `Bearer ${getToken()}`
+      })
+    }
+  });
+
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || 'API error');
+
+  return json.data;
+};
+
+/* ================= UI COMPONENTS ================= */
+
+const backBtn = () => `
+  <button id="back"
+    class="mb-6 text-slate-300 hover:text-white hover:underline transition">
+    ← Back
+  </button>
+`;
+
+const listItem = (title, desc, right, attrName, attrValue) => `
+  <div 
+    class="flex justify-between items-center bg-white/5 backdrop-blur-md 
+           border border-white/10 rounded-xl p-5 cursor-pointer 
+           hover:bg-white/10 hover:scale-[1.01] transition-all duration-200"
+    ${attrName}="${attrValue}"
+  >
+    <div>
+      <h4 class="font-bold text-white text-lg">${title}</h4>
+      <p class="text-sm text-slate-400 mt-1">${desc || ''}</p>
+    </div>
+
+    <span class="text-primary font-semibold text-lg">${right}</span>
+  </div>
+`;
+
+/* ================= HOME ================= */
+
+function renderHome() {
+  const el = get('menu-container');
+
+  el.innerHTML = `
+    <div class="grid md:grid-cols-2 gap-12">
+
+      <div id="btn-category"
+        class="group rounded-2xl border border-primary/20 p-10 cursor-pointer 
+               bg-white/5 backdrop-blur-md 
+               hover:bg-primary/10 hover:scale-[1.02] transition-all shadow-xl">
+        <h2 class="text-3xl font-bold text-white group-hover:text-primary transition">
+          Danh mục món
+        </h2>
+        <p class="text-slate-400 mt-2">Khám phá các món ăn</p>
+      </div>
+
+      <div id="btn-combo"
+        class="group rounded-2xl border border-primary/20 p-10 cursor-pointer 
+               bg-white/5 backdrop-blur-md 
+               hover:bg-primary/10 hover:scale-[1.02] transition-all shadow-xl">
+        <h2 class="text-3xl font-bold text-white group-hover:text-primary transition">
+          Combo
+        </h2>
+        <p class="text-slate-400 mt-2">Combo tiết kiệm</p>
+      </div>
+
+    </div>
+  `;
+
+  get('btn-category').onclick = renderCategoryList;
+  get('btn-combo').onclick = renderComboList;
+}
+
+/* ================= CATEGORY ================= */
+
+async function renderCategoryList() {
+  const el = get('menu-container');
+
+  try {
+    const categories = await fetchAPI(`${API}/categories`);
+
+    el.innerHTML = `
+      ${backBtn()}
+      <div class="space-y-4">
+        ${categories.map(c =>
+          listItem(c.name, '', c.foodCount || 0, 'data-name', c.name)
+        ).join('')}
+      </div>
+    `;
+
+    el.querySelectorAll('[data-name]').forEach(item => {
+      item.onclick = () => renderFoodList(item.dataset.name);
+    });
+
+    get('back').onclick = renderHome;
+
+  } catch {
+    el.innerHTML = `<p class="text-red-500">Lỗi load category</p>`;
+  }
+}
+
+/* ================= FOOD LIST ================= */
+
+async function renderFoodList(categoryName) {
+  const el = get('menu-container');
+
+  try {
+    const foods = await fetchAPI(
+      `${API}/foods?categoryName=${encodeURIComponent(categoryName)}`
+    );
+
+    el.innerHTML = `
+      ${backBtn()}
+      <h2 class="text-3xl font-bold mb-6 text-white">${categoryName}</h2>
+
+      <div class="space-y-4">
+        ${foods.map(f =>
+          listItem(f.name, f.description, `$${f.price}`, 'data-id', f.id)
+        ).join('')}
+      </div>
+    `;
+
+    el.querySelectorAll('[data-id]').forEach(item => {
+      item.onclick = () => renderFoodDetail(item.dataset.id);
+    });
+
+    get('back').onclick = renderCategoryList;
+
+  } catch {
+    el.innerHTML = `<p class="text-red-500">Lỗi load food</p>`;
+  }
+}
+
+/* ================= FOOD DETAIL ================= */
+
+async function renderFoodDetail(id) {
+  const el = get('menu-container');
+
+  try {
+    const food = await fetchAPI(`${API}/foods/${id}`);
+
+    el.innerHTML = `
+      ${backBtn()}
+
+      <div class="grid md:grid-cols-2 gap-12 items-center">
+
+        <img src="${food.imageUrl || '/images/placeholder.jpg'}"
+             class="rounded-2xl h-[400px] w-full object-cover shadow-2xl"/>
+
+        <div class="space-y-4">
+          <h2 class="text-4xl font-black text-white">${food.name}</h2>
+
+          <p class="text-slate-300">
+            ${food.description || ''}
+          </p>
+
+          <p class="text-2xl font-bold text-primary">$${food.price}</p>
+
+          <div class="flex items-center gap-4 mt-6">
+            <input id="qty" type="number" value="1" min="1"
+              class="w-20 border border-white/20 bg-black/50 px-3 py-2 rounded-lg text-white"/>
+
+            <button id="add"
+              class="bg-primary text-black px-6 py-3 rounded-xl font-bold 
+                     hover:scale-105 transition-all">
+              🛒 Thêm vào giỏ
+            </button>
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    get('add').onclick = () => {
+      addToCart({
+        type: "FOOD",
+        itemId: food.id,
+        name: food.name,
+        price: food.price,
+        quantity: Number(get('qty').value || 1)
+      });
+    };
+
+    get('back').onclick = renderCategoryList;
+
+  } catch {
+    el.innerHTML = `<p class="text-red-500">Lỗi food detail</p>`;
+  }
+}
+
+/* ================= COMBO ================= */
+
+async function renderComboList() {
+  const el = get('menu-container');
+
+  try {
+    const combos = await fetchAPI(`${API}/combos`);
+
+    el.innerHTML = `
+      ${backBtn()}
+      <div class="space-y-4">
+        ${combos.map(c =>
+          listItem(c.name, c.description, `$${c.price}`, 'data-id', c.id)
+        ).join('')}
+      </div>
+    `;
+
+    el.querySelectorAll('[data-id]').forEach(item => {
+      item.onclick = () => renderComboDetail(item.dataset.id);
+    });
+
+    get('back').onclick = renderHome;
+
+  } catch {
+    el.innerHTML = `<p class="text-red-500">Lỗi load combo</p>`;
+  }
+}
+
+/* ================= COMBO DETAIL ================= */
+
+async function renderComboDetail(id) {
+  const el = get('menu-container');
+
+  try {
+    const combo = await fetchAPI(`${API}/combos/${id}`);
+
+    el.innerHTML = `
+      ${backBtn()}
+
+      <div class="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10 shadow-2xl space-y-4">
+        <h2 class="text-3xl font-bold text-white">${combo.name}</h2>
+
+        <p class="text-slate-300">${combo.description || ''}</p>
+
+        <p class="text-2xl font-bold text-primary">$${combo.price}</p>
+
+        <button id="add"
+          class="bg-primary text-black px-6 py-3 rounded-xl font-bold 
+                 hover:scale-105 transition-all">
+          🛒 Thêm combo
+        </button>
+      </div>
+    `;
+
+    get('add').onclick = () => {
+      addToCart({
+        type: "COMBO",
+        itemId: combo.id,
+        name: combo.name,
+        price: combo.price,
+        quantity: 1
+      });
+    };
+
+    get('back').onclick = renderComboList;
+
+  } catch {
+    el.innerHTML = `<p class="text-red-500">Lỗi combo detail</p>`;
+  }
+}
+
+/* ================= CART ================= */
+
+function addToCart(item) {
+  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+  const idx = cart.findIndex(i =>
+    i.type === item.type && i.itemId === item.itemId
+  );
+
+  if (idx > -1) cart[idx].quantity += item.quantity;
+  else cart.push(item);
+
+  localStorage.setItem('cart', JSON.stringify(cart));
+
+  alert("Đã thêm vào giỏ hàng 🛒");
+}

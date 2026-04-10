@@ -24,14 +24,16 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Hành động</label>
-            <select id="history-action" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm">
+            <select id="history-action" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm">
               <option value="">Tất cả</option>
-              <option value="Thêm mới">Thêm mới</option>
-              <option value="Cập nhật">Cập nhật</option>
-              <option value="Xóa">Xóa</option>
+              <option value="CREATE">Thêm mới</option>
+              <option value="UPDATE">Cập nhật</option>
+              <option value="DELETE">Xóa</option>
+              <option value="LOGIN">Đăng nhập</option>
+              <option value="OTHER">Khác</option>
             </select>
           </div>
-          <button onclick="renderHistory()" class="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-700 text-white px-5 py-2 rounded-xl font-bold transition-all shadow-lg shadow-indigo-900/20 hover:shadow-indigo-900/40 hover:-translate-y-0.5">
+          <button onclick="renderHistory(0)" class="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-700 text-white px-5 py-2 rounded-xl font-bold transition-all shadow-lg shadow-indigo-900/20 hover:shadow-indigo-900/40 hover:-translate-y-0.5">
             <span class="material-symbols-outlined text-sm">filter_list</span>
             Lọc
           </button>
@@ -45,7 +47,6 @@
                   <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Thời gian</th>
                   <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Người thực hiện</th>
                   <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
-                  <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Đối tượng</th>
                   <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Chi tiết</th>
                 </tr>
               </thead>
@@ -53,6 +54,7 @@
                 <!-- JS Render -->
               </tbody>
             </table>
+            <div id="pagination" class="flex gap-2 p-4 justify-center"></div>
           </div>
         </div>
       </div>
