@@ -1,17 +1,26 @@
+const routes = {
+  '#dashboard': { url: './pages/dashboard/dashboard.html', init: initDashboard },
+  '#dishes': { url: './pages/foods/foods.html', init: initFoods },
+  '#customers': { url: './pages/customers/customers.html', init: initCustomers },
+  '#tables': { url: './pages/tables/tables.html', init: initTables },
+  '#reservations': { url: './pages/reservations/reservations.html', init: initReservations },
+  '#vouchers': { url: './pages/vouchers/vouchers.html', init: initVouchers },
+  '#stats-month': { url: './pages/statistics/revenue.html', init: window.initStatsMonth },
+  '#stats-dishes': { url: './pages/statistics/best-selling.html', init: window.initStatsDishes },
+  '#stats-hours': { url: './pages/statistics/customers-by-hour.html', init: window.initStatsHours },
+  '#history': { url: './pages/system-log/system-log.html', init: window.initSystemLog }
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
-  // Load components
   await loadComponent('sidebar-container', './components/sidebar.html');
   await loadComponent('navbar-container', './components/navbar.html');
   await loadComponent('modal-container', './components/modal.html');
 
-  // Initialize sidebar events
   initSidebar();
 
-  // Load initial route
   const hash = window.location.hash || '#dashboard';
   handleRoute(hash);
 
-  // Handle routing
   window.addEventListener('hashchange', () => {
     handleRoute(window.location.hash);
   });
@@ -27,19 +36,6 @@ async function loadComponent(containerId, url) {
     console.error(`Error loading component ${url}:`, error);
   }
 }
-
-const routes = {
-  '#dashboard': { url: './pages/dashboard/dashboard.html', init: initDashboard },
-  '#dishes': { url: './pages/foods/foods.html', init: initFoods },
-  '#customers': { url: './pages/customers/customers.html', init: initCustomers },
-  '#tables': { url: './pages/tables/tables.html', init: initTables },
-  '#reservations': { url: './pages/reservations/reservations.html', init: initReservations },
-  '#vouchers': { url: './pages/vouchers/vouchers.html', init: initVouchers },
-  '#stats-month': { url: './pages/statistics/revenue.html', init: initStatsMonth },
-  '#stats-dishes': { url: './pages/statistics/best-selling.html', init: initStatsDishes },
-  '#stats-hours': { url: './pages/statistics/customers-by-hour.html', init: initStatsHours },
-  '#history': { url: './pages/system-log/system-log.html', init: initSystemLog }
-};
 
 async function handleRoute(hash) {
   const route = routes[hash];

@@ -1,7 +1,5 @@
 package com.ngocquang.restautant.modules.category.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,9 +11,9 @@ import lombok.NoArgsConstructor;
 @Data
 public class CategoryResponse {
 
-    @NotEmpty(message = "id is required")
     private Integer id;
-
-    @NotBlank(message = "Name is required")
     private String name;
+    private String description;
+
+    private Integer foodCount;
 }

@@ -1,11 +1,32 @@
 package com.ngocquang.restautant.modules.payment.repository;
 
-
+import com.ngocquang.restautant.modules.payment.entity.Invoice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.ngocquang.restautant.modules.payment.entity.Invoice;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
-public interface InvoiceRepository extends JpaRepository<Invoice,Integer> {
+public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
+
+    @Query(value = """
+        SELECT 
+            DATE_FORMAT(i.created_at, '%Y-%m') AS month,
+            COUNT(i.id) AS totalInvoices,
+            COALESCE(SUM(b.guest_count), 0) AS totalGuests,
+            COALESCE(SUM(p.amount), 0) AS totalRevenue
+        FROM invoice i
+        LEFT JOIN booking b ON b.id = i.booking_id
+        LEFT JOIN payment p ON p.invoice_id = i.id
+        WHERE i.created_at BETWEEN :start AND :end
+        GROUP BY DATE_FORMAT(i.created_at, '%Y-%m')
+        ORDER BY month
+    """, nativeQuery = true)
+    List<Object[]> getRevenueByMonth(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 }

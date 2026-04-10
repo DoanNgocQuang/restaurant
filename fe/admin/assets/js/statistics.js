@@ -1,28 +1,102 @@
+const API = 'http://localhost:8080/api';
+
 function initStatsMonth() {
   renderStatsMonth();
 }
 
-function renderStatsMonth() {
+async function renderStatsMonth() {
   const tbody = document.getElementById('stats-month-tbody');
-  if (tbody) {
-    const data = [
-      { month: '10/2023', orders: 1245, guests: 3500, revenue: '$42,500.00' },
-      { month: '09/2023', orders: 1100, guests: 3100, revenue: '$38,200.00' },
-      { month: '08/2023', orders: 1350, guests: 3800, revenue: '$45,800.00' }
-    ];
+  if (!tbody) return;
 
-    let html = '';
-    data.forEach(item => {
-      html += `
-        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">${item.month}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${item.orders}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${item.guests}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600 dark:text-green-400">${item.revenue}</td>
-        </tr>
-      `;
-    });
-    tbody.innerHTML = html;
+  const startEl = document.getElementById('stats-month-start');
+  const endEl = document.getElementById('stats-month-end');
+
+  if (!startEl || !endEl) return;
+
+  const start = startEl.value;
+  const end = endEl.value;
+
+  if (!start || !end) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center p-4 text-gray-500">
+          Vui lòng chọn khoảng thời gian
+        </td>
+      </tr>`;
+    return;
+  }
+
+  if (new Date(start) > new Date(end)) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center p-4 text-red-500">
+          Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc
+        </td>
+      </tr>`;
+    return;
+  }
+
+  const startDate = `${start}-01T00:00:00`;
+
+  const endObj = new Date(end + "-01T00:00:00");
+  endObj.setMonth(endObj.getMonth() + 1);
+  endObj.setDate(0); // last day of month
+
+  const endDate = `${endObj.getFullYear()}-${String(endObj.getMonth() + 1).padStart(2, '0')}-${String(endObj.getDate()).padStart(2, '0')}T23:59:59`;
+
+  const url = `${API}/statistics/revenue/monthly?start=${startDate}&end=${endDate}`;
+
+  try {
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      throw new Error(`HTTP error ${res.status}`);
+    }
+
+    const json = await res.json();
+
+    const data = Array.isArray(json)
+      ? json
+      : Array.isArray(json?.data)
+        ? json.data
+        : [];
+
+    if (data.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-center p-4 text-gray-500">
+            Không có dữ liệu
+          </td>
+        </tr>`;
+      return;
+    }
+
+    tbody.innerHTML = data.map(item => `
+      <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">
+          ${item.month ?? '-'}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+          ${item.totalInvoices ?? 0}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+          ${item.totalGuests ?? 0}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600 dark:text-green-400">
+          ${item.totalRevenue ?? 0}
+        </td>
+      </tr>
+    `).join('');
+
+  } catch (err) {
+    console.error(err);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-red-500 p-4 text-center">
+          Lỗi tải dữ liệu
+        </td>
+      </tr>`;
   }
 }
 
@@ -82,3 +156,7 @@ function renderStatsHours() {
     tbody.innerHTML = html;
   }
 }
+
+window.initStatsMonth = initStatsMonth;
+window.initStatsDishes = initStatsDishes;
+window.initStatsHours = initStatsHours;
