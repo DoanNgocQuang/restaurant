@@ -63,4 +63,14 @@ public class BookingController {
         this.bookingService.deleteBooking(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Deleted booking successfully"));
     }
+
+    @GetMapping("/my-current")
+    public ResponseEntity<ApiResponse<BookingResponse>> getMyCurrentBooking() {
+        return ResponseEntity.ok(
+            ApiResponse.success(
+                bookingService.getMyCurrentBooking(),
+                "Fetched current booking successfully"
+            )
+        );
+    }
 }

@@ -109,7 +109,6 @@ function renderProfileContent() {
         </h3>
 
         <div id="order-list" class="space-y-4">
-          <p class="text-slate-400">Đang tải...</p>
         </div>
       </section>
     `;
@@ -117,6 +116,7 @@ function renderProfileContent() {
     contentContainer.innerHTML = html;
 
     loadOrders();
+    return;
   } else if (activeTab === 'offers') {
     const offers = [
       { title: 'Giảm 20% Tháng Sinh Nhật', desc: 'Áp dụng cho hóa đơn trên $100', expiry: '31/03/2026', code: 'BDAY2026' },
@@ -276,6 +276,11 @@ async function loadOrders() {
   const container = document.getElementById('order-list');
   const token = localStorage.getItem('token');
 
+  if (!token) {
+    container.innerHTML = `<p class="text-red-500">Bạn chưa đăng nhập</p>`;
+    return;
+  }
+
   try {
     const res = await fetch('http://localhost:8080/api/orders/my-orders', {
       headers: {
@@ -284,29 +289,47 @@ async function loadOrders() {
     });
 
     const json = await res.json();
-    if (!res.ok) throw new Error(json.message);
 
-    const orders = json.data;
+    if (!res.ok) {
+      throw new Error(json.message || 'Lỗi API');
+    }
+
+    const orders = Array.isArray(json.data) ? json.data : [];
 
     if (!orders.length) {
       container.innerHTML = `<p class="text-slate-400">Bạn chưa có đơn hàng nào</p>`;
       return;
     }
 
+    const statusMap = {
+      CONFIRMED: 'Đã xác nhận',
+      CANCELLED: 'Đã huỷ',
+    };
+
     container.innerHTML = orders.map(order => {
 
       const d = new Date(order.createdAt);
       const date = d.toLocaleDateString('vi-VN') + ' ' +
-                   d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                   d.toLocaleTimeString('vi-VN', {
+                     hour: '2-digit',
+                     minute: '2-digit'
+                   });
 
-      const items = order.orderDetails.map(i =>
-        i.foodId ? `Food x${i.quantity}` : `Combo x${i.quantity}`
-      ).join(', ');
+      const items = (order.orderDetails || []).map(i => {
+        if (i.foodId) return `Món x${i.quantity}`;
+        if (i.comboId) return `Combo x${i.quantity}`;
+        return `Item x${i.quantity}`;
+      }).join(', ') || 'Không có dữ liệu';
+
+      const price = Number(order.totalAmount || 0)
+        .toLocaleString('vi-VN');
 
       let statusClass = 'bg-gray-100 text-gray-600';
-      if (order.status === 'PENDING') statusClass = 'bg-yellow-100 text-yellow-600';
-      if (order.status === 'CONFIRMED') statusClass = 'bg-green-100 text-green-600';
-      if (order.status === 'CANCELLED') statusClass = 'bg-red-100 text-red-600';
+      if (order.status === 'CONFIRMED') {
+        statusClass = 'bg-green-100 text-green-600';
+      } else if (order.status === 'CANCELLED') {
+        statusClass = 'bg-red-100 text-red-600';
+      }
 
       return `
         <div class="p-5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition flex flex-col md:flex-row justify-between gap-4">
@@ -329,11 +352,11 @@ async function loadOrders() {
 
           <div class="flex items-center gap-4 justify-between md:justify-end">
             <span class="font-bold text-primary text-lg">
-              $${order.totalAmount}
+              ${price}đ
             </span>
 
             <span class="px-3 py-1 rounded-full text-xs font-bold uppercase ${statusClass}">
-              ${order.status}
+              ${statusMap[order.status] || order.status}
             </span>
           </div>
         </div>
@@ -341,6 +364,11 @@ async function loadOrders() {
     }).join('');
 
   } catch (err) {
-    container.innerHTML = `<p class="text-red-500">Lỗi load đơn hàng</p>`;
+    console.error(err);
+    container.innerHTML = `
+      <p class="text-red-500">
+        Lỗi load đơn hàng: ${err.message}
+      </p>
+    `;
   }
 }

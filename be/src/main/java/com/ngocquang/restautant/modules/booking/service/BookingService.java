@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ngocquang.restautant.common.CurrentUserUtil;
 import com.ngocquang.restautant.common.helper.BadRequestException;
 import com.ngocquang.restautant.common.helper.ResourceNotFoundException;
 import com.ngocquang.restautant.modules.booking.dto.BookingRequest;
@@ -32,6 +33,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final resTableRepository tableRepository;
     private final UserRepository userRepository;
+    private final CurrentUserUtil currentUserUtil;
 
     private BookingResponse toResponse(Booking booking) {
         List<BookingResponse.TableInfo> tableInfos = booking.getTables() == null ? List.of()
@@ -214,5 +216,18 @@ public class BookingService {
         List<resTable> oldTables = booking.getTables() == null ? List.of() : new ArrayList<>(booking.getTables());
         this.bookingRepository.delete(booking);
         refreshTableStatuses(oldTables);
+    }
+
+    @Transactional(readOnly = true)
+    public BookingResponse getMyCurrentBooking() {
+
+        User user = currentUserUtil.getCurrentUser();
+
+        return bookingRepository
+                .findByUserAndStatusOrderByBookingTimeDesc(user, Booking.Status.PENDING)
+                .stream()
+                .findFirst()
+                .map(this::toResponse)
+                .orElse(null);
     }
 }

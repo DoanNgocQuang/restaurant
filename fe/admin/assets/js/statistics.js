@@ -1,31 +1,42 @@
 const API = 'http://localhost:8080/api';
 
+let revenueChart = null;
+
+/* ================= INIT ================= */
 function initStatsMonth() {
   renderStatsMonth();
 }
 
+/* ================= RENDER MONTH ================= */
 async function renderStatsMonth() {
   const tbody = document.getElementById('stats-month-tbody');
-  if (!tbody) return;
+  const chartCanvas = document.getElementById('revenueChart');
+
+  if (!tbody || !chartCanvas) return;
 
   const startEl = document.getElementById('stats-month-start');
   const endEl = document.getElementById('stats-month-end');
 
   if (!startEl || !endEl) return;
 
-  const start = startEl.value;
-  const end = endEl.value;
+  let start = startEl.value;
+  let end = endEl.value;
 
-  if (!start || !end) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" class="text-center p-4 text-gray-500">
-          Vui lòng chọn khoảng thời gian
-        </td>
-      </tr>`;
-    return;
+  /* ===== AUTO DEFAULT ===== */
+  if (!end) {
+    const now = new Date();
+    end = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    endEl.value = end;
   }
 
+  if (!start) {
+    const d = new Date(end + "-01T00:00:00");
+    d.setMonth(d.getMonth() - 5);
+    start = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    startEl.value = start;
+  }
+
+  /* ===== VALIDATE ===== */
   if (new Date(start) > new Date(end)) {
     tbody.innerHTML = `
       <tr>
@@ -36,11 +47,12 @@ async function renderStatsMonth() {
     return;
   }
 
+  /* ===== BUILD DATE ===== */
   const startDate = `${start}-01T00:00:00`;
 
   const endObj = new Date(end + "-01T00:00:00");
   endObj.setMonth(endObj.getMonth() + 1);
-  endObj.setDate(0); // last day of month
+  endObj.setDate(0);
 
   const endDate = `${endObj.getFullYear()}-${String(endObj.getMonth() + 1).padStart(2, '0')}-${String(endObj.getDate()).padStart(2, '0')}T23:59:59`;
 
@@ -48,10 +60,7 @@ async function renderStatsMonth() {
 
   try {
     const res = await fetch(url);
-
-    if (!res.ok) {
-      throw new Error(`HTTP error ${res.status}`);
-    }
+    if (!res.ok) throw new Error(res.status);
 
     const json = await res.json();
 
@@ -61,6 +70,7 @@ async function renderStatsMonth() {
         ? json.data
         : [];
 
+    /* ===== NO DATA ===== */
     if (data.length === 0) {
       tbody.innerHTML = `
         <tr>
@@ -68,25 +78,30 @@ async function renderStatsMonth() {
             Không có dữ liệu
           </td>
         </tr>`;
+      renderChart([]);
       return;
     }
 
+    /* ===== TABLE ===== */
     tbody.innerHTML = data.map(item => `
       <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">
+        <td class="px-6 py-4 font-bold text-slate-900 dark:text-white">
           ${item.month ?? '-'}
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+        <td class="px-6 py-4 text-slate-500">
           ${item.totalInvoices ?? 0}
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+        <td class="px-6 py-4 text-slate-500">
           ${item.totalGuests ?? 0}
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600 dark:text-green-400">
+        <td class="px-6 py-4 text-right font-bold text-green-600 dark:text-green-400">
           ${item.totalRevenue ?? 0}
         </td>
       </tr>
     `).join('');
+
+    /* ===== CHART ===== */
+    renderChart(data);
 
   } catch (err) {
     console.error(err);
@@ -98,6 +113,41 @@ async function renderStatsMonth() {
         </td>
       </tr>`;
   }
+}
+
+/* ================= CHART ================= */
+function renderChart(data) {
+  const ctx = document.getElementById('revenueChart');
+
+  if (!ctx) return;
+
+  if (revenueChart) {
+    revenueChart.destroy();
+  }
+
+  if (!data || data.length === 0) return;
+
+  const labels = data.map(i => i.month);
+  const revenues = data.map(i => i.totalRevenue);
+
+  revenueChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Doanh thu',
+        data: revenues
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: true
+        }
+      }
+    }
+  });
 }
 
 function initStatsDishes() {
@@ -156,6 +206,13 @@ function renderStatsHours() {
     tbody.innerHTML = html;
   }
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  const view = document.getElementById("view-stats-month");
+  if (view) {
+    initStatsMonth();
+  }
+});
 
 window.initStatsMonth = initStatsMonth;
 window.initStatsDishes = initStatsDishes;
