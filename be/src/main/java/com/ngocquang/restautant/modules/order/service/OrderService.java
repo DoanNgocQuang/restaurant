@@ -143,7 +143,7 @@ public class OrderService {
 
     private Booking resolveBooking(User user) {
         return bookingRepository
-                .findByUserAndStatusOrderByBookingTimeDesc(user, Booking.Status.CONFIRMED)
+                .findByUserAndStatusOrderByBookingTimeDesc(user, Booking.Status.PENDING)
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new BadRequestException("Bạn chưa có booking hợp lệ"));

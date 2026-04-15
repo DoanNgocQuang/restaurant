@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('checkout-btn');
   if (btn) btn.onclick = checkout;
 
-  // check booking -> disable nút nếu chưa có
   checkBooking().then(b => {
     if (!b && btn) {
       btn.textContent = "Cần đặt bàn trước";
@@ -178,6 +177,11 @@ async function checkBooking() {
         Authorization: `Bearer ${getToken()}`
       }
     });
+    
+    if (res.status === 401) {
+      window.location.href = '/pages/login.html';
+      return null;
+    }
 
     if (!res.ok) return null;
 
