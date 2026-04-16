@@ -1,153 +1,167 @@
-function initDashboard() {
-  // Initial data
-  let currentRevenue = 42500;
-  let currentCustomers = 84;
-  let currentTables = 12;
-  const maxTables = 20;
-  let chartData = [40, 60, 30, 80, 50, 90, 70, 85, 65, 95, 75, 88];
-  const chartLabels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-  let topDishesData = [
-    { name: 'Bò bít tết Wagyu', sales: 124, price: '$120.00', trend: '+12.0%' },
-    { name: 'Cá hồi áp chảo', sales: 98, price: '$85.00', trend: '+8.0%' },
-    { name: 'Súp nấm Truffle', sales: 85, price: '$45.00', trend: '-2.0%' }
-  ];
+let dashboardChartInstance = null;
 
-  function renderBarChart() {
-    const barChart = document.getElementById('dashboard-bar-chart');
-    if (!barChart) return;
-    
-    let html = '';
-    chartData.forEach((val, index) => {
-      const height = Math.min(Math.max(val, 0), 100) + '%';
-      html += `
-        <div class="flex flex-col items-center gap-2 flex-1 group">
-          <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-t-lg relative flex items-end justify-center h-full">
-            <div class="w-full bg-gradient-to-t from-rose-600 to-rose-400 rounded-t-lg transition-all duration-500 group-hover:from-rose-500 group-hover:to-rose-300" style="height: ${height}"></div>
-            <div class="absolute -top-8 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
-              $${(val * 100).toLocaleString()}
-            </div>
-          </div>
-          <span class="text-xs font-medium text-slate-500">${chartLabels[index]}</span>
-        </div>
-      `;
+async function initDashboard() {
+  try {
+    const dateRange = getDashboardRange();
+    const query = `/statistics/revenue/monthly?start=${encodeURIComponent(dateRange.start)}&end=${encodeURIComponent(dateRange.end)}`;
+
+    const [foods, users, tables, bookings, logs, revenues] = await Promise.all([
+      window.AdminApp.request('/foods'),
+      window.AdminApp.request('/users'),
+      window.AdminApp.request('/tables'),
+      window.AdminApp.request('/bookings'),
+      window.AdminApp.request('/system-logs?page=0&size=5&sort=loggedAt,desc'),
+      window.AdminApp.request(query)
+    ]);
+
+    renderDashboardSummary({
+      foods: Array.isArray(foods) ? foods : [],
+      users: Array.isArray(users) ? users : [],
+      tables: Array.isArray(tables) ? tables : [],
+      bookings: Array.isArray(bookings) ? bookings : [],
+      logs: logs?.content || [],
+      revenues: Array.isArray(revenues) ? revenues : []
     });
-    barChart.innerHTML = html;
+  } catch (error) {
+    console.error(error);
+    const tbody = document.getElementById('dashboard-history-tbody');
+    if (tbody) {
+      tbody.innerHTML = window.AdminApp.renderTableMessage(4, error.message || 'Không thể tải dashboard.', 'error');
+    }
+  }
+}
+
+function getDashboardRange() {
+  const end = new Date();
+  const start = new Date(end.getFullYear(), end.getMonth() - 5, 1);
+  const endDate = new Date(end.getFullYear(), end.getMonth() + 1, 0, 23, 59, 59);
+
+  return {
+    start: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-01T00:00:00`,
+    end: `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}T23:59:59`
+  };
+}
+
+function renderDashboardSummary({ foods, users, tables, bookings, logs, revenues }) {
+  const totalRevenue = revenues.reduce((sum, item) => sum + Number(item.totalRevenue || 0), 0);
+  const activeUsers = users.filter((user) => user.isActive).length;
+  const activeBookings = bookings.filter((booking) => ['PENDING', 'CONFIRMED'].includes(booking.status)).length;
+  const availableTables = tables.filter((table) => table.status === 'AVAILABLE').length;
+
+  document.getElementById('dashboard-revenue').textContent = window.AdminApp.formatCurrency(totalRevenue);
+  document.getElementById('dashboard-users').textContent = window.AdminApp.formatNumber(activeUsers);
+  document.getElementById('dashboard-bookings').textContent = window.AdminApp.formatNumber(activeBookings);
+  document.getElementById('dashboard-tables').textContent = window.AdminApp.formatNumber(availableTables);
+
+  renderDashboardMenuSummary(foods);
+  renderDashboardHistory(logs);
+  renderDashboardRevenueChart(revenues);
+}
+
+function renderDashboardMenuSummary(foods) {
+  const container = document.getElementById('dashboard-menu-summary');
+  if (!container) return;
+
+  if (foods.length === 0) {
+    container.innerHTML = '<p class="text-sm text-slate-500">Chưa có món ăn để thống kê.</p>';
+    return;
   }
 
-  function renderTopDishes() {
-    const topDishes = document.getElementById('top-selling-dishes');
-    if (!topDishes) return;
-    
-    let html = '';
-    topDishesData.forEach((dish, index) => {
-      html += `
-        <div class="flex items-center justify-between transition-all duration-300">
-          <div class="flex items-center gap-4">
-            <div class="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-500">
-              #${index + 1}
-            </div>
-            <div>
-              <p class="font-bold text-sm text-slate-900 dark:text-white">${dish.name}</p>
-              <p class="text-xs text-slate-500">${dish.sales} lượt gọi</p>
-            </div>
+  const grouped = foods.reduce((accumulator, food) => {
+    const categoryName = food.category?.name || 'Chưa phân loại';
+    if (!accumulator[categoryName]) {
+      accumulator[categoryName] = {
+        total: 0,
+        available: 0,
+        averagePrice: 0,
+        sumPrice: 0
+      };
+    }
+
+    accumulator[categoryName].total += 1;
+    accumulator[categoryName].sumPrice += Number(food.price || 0);
+    if (food.status === 'AVAILABLE') {
+      accumulator[categoryName].available += 1;
+    }
+
+    return accumulator;
+  }, {});
+
+  container.innerHTML = Object.entries(grouped).map(([name, item]) => {
+    const averagePrice = item.total > 0 ? item.sumPrice / item.total : 0;
+    return `
+      <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/50">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h5 class="font-bold text-slate-900 dark:text-white">${window.AdminApp.escapeHtml(name)}</h5>
+            <p class="mt-1 text-sm text-slate-500">${item.available}/${item.total} món đang phục vụ</p>
           </div>
-          <div class="text-right">
-            <p class="font-bold text-sm text-slate-900 dark:text-white">${dish.price}</p>
-            <p class="text-xs ${dish.trend.startsWith('+') ? 'text-green-500' : 'text-red-500'} font-medium">${dish.trend}</p>
-          </div>
+          <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">${window.AdminApp.formatCurrency(averagePrice)}</span>
         </div>
-      `;
-    });
-    topDishes.innerHTML = html;
+      </div>
+    `;
+  }).join('');
+}
+
+function renderDashboardHistory(logs) {
+  const tbody = document.getElementById('dashboard-history-tbody');
+  if (!tbody) return;
+
+  if (!logs || logs.length === 0) {
+    tbody.innerHTML = window.AdminApp.renderTableMessage(4, 'Chưa có log hệ thống.');
+    return;
   }
 
-  // Initial renders
-  renderBarChart();
-  renderTopDishes();
+  tbody.innerHTML = logs.map((log) => `
+    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatDateTime(log.loggedAt)}</td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">${window.AdminApp.escapeHtml(log.userEmail || 'System')}</td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.escapeHtml(log.action || 'OTHER')}</td>
+      <td class="px-6 py-4 text-sm text-slate-500">${window.AdminApp.escapeHtml(log.detail || '--')}</td>
+    </tr>
+  `).join('');
+}
 
-  // Render dashboard history
-  const historyTbody = document.getElementById('dashboard-history-tbody');
-  if (historyTbody) {
-    const history = [
-      { time: '10:30 AM, 20/10/2023', user: 'Julian Casablancas', action: 'Cập nhật', target: 'Menu', details: 'Thay đổi giá Bò bít tết Wagyu' },
-      { time: '09:15 AM, 20/10/2023', user: 'System', action: 'Tự động', target: 'Báo cáo', details: 'Xuất báo cáo doanh thu ngày' },
-      { time: '08:00 AM, 20/10/2023', user: 'Admin', action: 'Đăng nhập', target: 'Hệ thống', details: 'Đăng nhập thành công' },
-      { time: '21:45 PM, 19/10/2023', user: 'Staff A', action: 'Thêm mới', target: 'Đặt bàn', details: 'Thêm đặt bàn mới cho Bàn 03' },
-      { time: '19:30 PM, 19/10/2023', user: 'Staff B', action: 'Xóa', target: 'Voucher', details: 'Xóa voucher hết hạn SUMMER20' }
-    ];
-    
-    let html = '';
-    history.forEach(item => {
-      let actionClass = '';
-      switch (item.action) {
-        case 'Thêm mới': actionClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'; break;
-        case 'Cập nhật': actionClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'; break;
-        case 'Xóa': actionClass = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'; break;
-        default: actionClass = 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300';
+function renderDashboardRevenueChart(revenues) {
+  const canvas = document.getElementById('dashboard-revenue-chart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  if (dashboardChartInstance) {
+    dashboardChartInstance.destroy();
+  }
+
+  const labels = revenues.map((item) => item.month);
+  const values = revenues.map((item) => Number(item.totalRevenue || 0));
+
+  dashboardChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Doanh thu',
+          data: values,
+          borderColor: '#800020',
+          backgroundColor: 'rgba(128, 0, 32, 0.14)',
+          fill: true,
+          tension: 0.35
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          ticks: {
+            callback(value) {
+              return window.AdminApp.formatCurrency(value);
+            }
+          }
+        }
       }
-
-      html += `
-        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${item.time}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">${item.user}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${actionClass}">${item.action}</span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${item.target}</td>
-          <td class="px-6 py-4 text-sm text-slate-500 max-w-xs truncate" title="${item.details}">${item.details}</td>
-        </tr>
-      `;
-    });
-    historyTbody.innerHTML = html;
-  }
-
-  // Real-time updates simulation
-  if (window.dashboardInterval) {
-    clearInterval(window.dashboardInterval);
-  }
-
-  window.dashboardInterval = setInterval(() => {
-    // Check if we are still on the dashboard
-    if (!document.getElementById('monthly-revenue')) {
-      clearInterval(window.dashboardInterval);
-      return;
     }
-
-    // Update Monthly Revenue
-    currentRevenue += Math.floor(Math.random() * 50) - 10; // Fluctuates upwards generally
-    document.getElementById('monthly-revenue').innerText = `$${currentRevenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-
-    // Update Hourly Customers
-    currentCustomers += Math.floor(Math.random() * 5) - 2;
-    if (currentCustomers < 0) currentCustomers = 0;
-    document.getElementById('hourly-customers').innerHTML = `${currentCustomers} <span class="text-sm font-normal text-slate-400">khách/giờ</span>`;
-
-    // Update Active Tables
-    if (Math.random() > 0.6) {
-      currentTables += Math.floor(Math.random() * 3) - 1;
-      if (currentTables < 0) currentTables = 0;
-      if (currentTables > maxTables) currentTables = maxTables;
-      document.getElementById('active-tables').innerText = `${currentTables} / ${maxTables}`;
-    }
-
-    // Update Top Dishes
-    if (Math.random() > 0.5) {
-      topDishesData[0].sales += Math.floor(Math.random() * 3);
-      topDishesData[1].sales += Math.floor(Math.random() * 2);
-      topDishesData[2].sales += Math.floor(Math.random() * 2);
-      
-      // Re-sort and render
-      topDishesData.sort((a, b) => b.sales - a.sales);
-      renderTopDishes();
-    }
-
-    // Update Bar Chart (simulate current month changing)
-    if (Math.random() > 0.5) {
-      chartData[11] += Math.floor(Math.random() * 5) - 2;
-      if (chartData[11] < 0) chartData[11] = 0;
-      if (chartData[11] > 100) chartData[11] = 100;
-      renderBarChart();
-    }
-
-  }, 2500);
+  });
 }

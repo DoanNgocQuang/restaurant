@@ -20,6 +20,7 @@ public class BookingResponse {
     private String contactName;
     private LocalDateTime bookingTime;
     private Integer guestCount;
+    private Integer durationMinutes;
     private String note;
     private Booking.Status status;
     private LocalDateTime createdAt;

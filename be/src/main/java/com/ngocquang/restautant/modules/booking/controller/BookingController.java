@@ -67,10 +67,16 @@ public class BookingController {
     @GetMapping("/my-current")
     public ResponseEntity<ApiResponse<BookingResponse>> getMyCurrentBooking() {
         return ResponseEntity.ok(
-            ApiResponse.success(
-                bookingService.getMyCurrentBooking(),
-                "Fetched current booking successfully"
-            )
-        );
+                ApiResponse.success(
+                        bookingService.getMyCurrentBooking(),
+                        "Fetched current booking successfully"));
+    }
+
+    @PutMapping("/{id}/confirm")
+    public ResponseEntity<ApiResponse<BookingResponse>> confirmBooking(@PathVariable Integer id) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        bookingService.confirmBooking(id),
+                        "Booking confirmed successfully"));
     }
 }

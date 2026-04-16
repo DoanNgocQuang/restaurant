@@ -1,45 +1,36 @@
-      <header class="h-16 bg-white dark:bg-background-dark border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 shrink-0">
-        <div id="global-search-container" class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-1.5 w-96 border border-slate-200 dark:border-slate-700 transition-opacity duration-300">
-          <span class="material-symbols-outlined text-slate-400 text-xl">search</span>
-          <input class="bg-transparent border-none focus:outline-none focus:ring-0 text-sm w-full placeholder:text-slate-500 ml-2" placeholder="Tìm kiếm..." type="text" />
+<header class="h-16 bg-white dark:bg-background-dark border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 shrink-0">
+  <div id="global-search-container" class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg px-3 py-1.5 w-96 border border-slate-200 dark:border-slate-700 transition-opacity duration-300">
+    <span class="material-symbols-outlined text-slate-400 text-xl">search</span>
+    <input class="bg-transparent border-none focus:outline-none focus:ring-0 text-sm w-full placeholder:text-slate-500 ml-2" placeholder="Tìm kiếm..." type="text" />
+  </div>
+  <div class="flex items-center gap-6">
+    <div class="relative">
+      <button id="profile-btn" class="flex items-center gap-3 pl-6 border-l border-slate-200 dark:border-slate-800 text-left hover:opacity-80 transition-opacity">
+        <div class="text-right hidden sm:block">
+          <p data-admin-fullname class="text-sm font-bold leading-none">Quản trị viên</p>
+          <p data-admin-role class="text-[10px] text-slate-500 font-semibold uppercase tracking-tight mt-1">Administrator</p>
         </div>
-        <div class="flex items-center gap-6">
-          <div class="relative">
-            <button id="profile-btn" class="flex items-center gap-3 pl-6 border-l border-slate-200 dark:border-slate-800 text-left hover:opacity-80 transition-opacity">
-              <div class="text-right hidden sm:block">
-                <p class="text-sm font-bold leading-none">Julian Casablancas</p>
-                <p class="text-[10px] text-slate-500 font-semibold uppercase tracking-tight mt-1">Executive Manager</p>
-              </div>
-              <div class="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden border-2 border-primary/10">
-                <img alt="User Profile" class="h-full w-full object-cover" data-alt="Chef profile picture in a circular frame" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmt_OZIXzqMYUs2C1VShAi6N544FYfpEDluAeKLEGaEqngMQnO2hjLelQ3mHSacc9qgYKKPXa7kFRAVsbSYeys_NDs9Fr91sPtZhXESO6IhOnIJ8kx8NysBsnv95ZYnmrtYGsRJL3lrnvq1xsxX2EF6GjKryXFRWVTUXdJ5KSrZ-JukYgLs3SZ5oTusD5Z3-SI-G1L78aUIOg0dg59sslvPEQbs91KzBCb8UWhzUh0AYFUyY0IHcUUyQxyMOyy4LuAjH-5es4dqcXQ" />
-              </div>
-            </button>
-            
-            <!-- Profile Dropdown -->
-            <div id="profile-dropdown" class="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 hidden z-50">
-              <div class="p-4 border-b border-slate-100 dark:border-slate-700">
-                <p class="text-sm font-bold text-slate-900 dark:text-white">Julian Casablancas</p>
-                <p class="text-xs text-slate-500">Executive Manager</p>
-              </div>
-              <div class="p-4 space-y-3 text-sm">
-                <div class="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-                  <span class="material-symbols-outlined text-[18px]">wc</span>
-                  <span>Giới tính: Nam</span>
-                </div>
-                <div class="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-                  <span class="material-symbols-outlined text-[18px]">cake</span>
-                  <span>Ngày sinh: 15/08/1985</span>
-                </div>
-                <div class="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-                  <span class="material-symbols-outlined text-[18px]">phone</span>
-                  <span>SĐT: 0987 654 321</span>
-                </div>
-                <div class="flex items-center gap-3 text-slate-600 dark:text-slate-300">
-                  <span class="material-symbols-outlined text-[18px]">location_on</span>
-                  <span>Địa chỉ: 123 Nguyễn Văn Linh, Quận 7, TP.HCM</span>
-                </div>
-              </div>
-            </div>
+        <div class="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden border-2 border-primary/10">
+          <img data-admin-avatar alt="User Profile" class="h-full w-full object-cover" src="https://ui-avatars.com/api/?name=Admin&background=800020&color=fff" />
+        </div>
+      </button>
+
+      <div id="profile-dropdown" class="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 hidden z-50">
+        <div class="p-4 border-b border-slate-100 dark:border-slate-700">
+          <p data-admin-fullname class="text-sm font-bold text-slate-900 dark:text-white">Quản trị viên</p>
+          <p data-admin-role class="text-xs text-slate-500">Administrator</p>
+        </div>
+        <div class="p-4 space-y-3 text-sm">
+          <div class="flex items-center gap-3 text-slate-600 dark:text-slate-300">
+            <span class="material-symbols-outlined text-[18px]">mail</span>
+            <span data-admin-email>--</span>
+          </div>
+          <div class="flex items-center gap-3 text-slate-600 dark:text-slate-300">
+            <span class="material-symbols-outlined text-[18px]">phone</span>
+            <span data-admin-phone>--</span>
           </div>
         </div>
-      </header>
+      </div>
+    </div>
+  </div>
+</header>

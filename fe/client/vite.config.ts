@@ -1,4 +1,5 @@
 import tailwindcss from '@tailwindcss/vite';
+import fs from 'fs';
 import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
 import sirv from 'sirv';
@@ -12,6 +13,16 @@ export default defineConfig(({mode}) => {
         name: 'serve-admin-folder',
         configureServer(server) {
           server.middlewares.use('/admin', sirv(path.resolve(__dirname, '../admin'), { dev: true, single: false }));
+        }
+      },
+      {
+        name: 'copy-admin-build',
+        writeBundle() {
+          const adminSource = path.resolve(__dirname, '../admin');
+          const adminTarget = path.resolve(__dirname, 'dist/admin');
+
+          fs.rmSync(adminTarget, { recursive: true, force: true });
+          fs.cpSync(adminSource, adminTarget, { recursive: true });
         }
       }
     ],

@@ -28,7 +28,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class BookingService {
 
-    private static final List<Booking.Status> ACTIVE_STATUSES = List.of(Booking.Status.PENDING, Booking.Status.CONFIRMED);
+    private static final List<Booking.Status> ACTIVE_STATUSES = List.of(Booking.Status.PENDING,
+            Booking.Status.CONFIRMED);
 
     private final BookingRepository bookingRepository;
     private final resTableRepository tableRepository;
@@ -51,6 +52,7 @@ public class BookingService {
                 .contactName(booking.getContactName())
                 .bookingTime(booking.getBookingTime())
                 .guestCount(booking.getGuestCount())
+                .durationMinutes(booking.getDurationMinutes())
                 .note(booking.getNote())
                 .status(booking.getStatus())
                 .createdAt(booking.getCreatedAt())
@@ -65,6 +67,7 @@ public class BookingService {
         booking.setContactName(request.getContactName().trim());
         booking.setBookingTime(request.getBookingTime());
         booking.setGuestCount(request.getGuestCount());
+        booking.setDurationMinutes(request.getDurationMinutes() != null ? request.getDurationMinutes() : 120);
         booking.setNote(request.getNote().trim());
         booking.setStatus(request.getStatus() != null ? request.getStatus() : Booking.Status.PENDING);
         booking.setUser(user);
@@ -80,11 +83,15 @@ public class BookingService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
     }
 
-    private List<resTable> resolveTables(List<Integer> tableIds, Integer currentBookingId) {
+    private List<resTable> resolveTables(List<Integer> tableIds, Integer currentBookingId,
+            java.time.LocalDateTime bookingTime, Integer durationMinutes) {
         Set<Integer> uniqueTableIds = tableIds.stream().collect(Collectors.toSet());
         if (uniqueTableIds.size() != tableIds.size()) {
             throw new BadRequestException("A table can only appear once in a booking");
         }
+
+        java.time.LocalDateTime bookingEndTime = bookingTime
+                .plusMinutes(durationMinutes != null ? durationMinutes : 120);
 
         List<resTable> tables = new ArrayList<>();
         for (Integer tableId : tableIds) {
@@ -95,20 +102,17 @@ public class BookingService {
             resTable table = this.tableRepository.findById(tableId)
                     .orElseThrow(() -> new ResourceNotFoundException("Table not found with id: " + tableId));
 
-            if (table.getStatus() == resTable.Status.OCCUPIED) {
-                throw new BadRequestException("Table is currently occupied: " + tableId);
+            if (table.getStatus() == resTable.Status.OCCUPIED && table.getOccupiedAt() != null) {
+                java.time.LocalDateTime occupiedEndTime = table.getOccupiedAt().plusMinutes(90);
+                if (table.getOccupiedAt().isBefore(bookingEndTime) && occupiedEndTime.isAfter(bookingTime)) {
+                    throw new BadRequestException("Table is occupied and not free for the selected time: " + tableId);
+                }
             }
 
-            boolean isBookedByAnotherBooking = currentBookingId == null
-                    ? this.bookingRepository.existsByTables_IdAndStatusIn(tableId, ACTIVE_STATUSES)
-                    : this.bookingRepository.existsByTables_IdAndStatusInAndIdNot(tableId, ACTIVE_STATUSES, currentBookingId);
-
-            if (isBookedByAnotherBooking) {
-                throw new BadRequestException("Table is already booked: " + tableId);
-            }
-
-            if (currentBookingId == null && table.getStatus() == resTable.Status.RESERVED) {
-                throw new BadRequestException("Table is currently reserved: " + tableId);
+            Long timeConflictResult = this.bookingRepository.existsTimeConflict(tableId, bookingTime, bookingEndTime,
+                    currentBookingId);
+            if (timeConflictResult != null && timeConflictResult > 0) {
+                throw new BadRequestException("Table is already booked for the selected time: " + tableId);
             }
 
             tables.add(table);
@@ -148,7 +152,8 @@ public class BookingService {
                 continue;
             }
 
-            boolean hasActiveBooking = this.bookingRepository.existsByTables_IdAndStatusIn(table.getId(), ACTIVE_STATUSES);
+            boolean hasActiveBooking = this.bookingRepository.existsByTables_IdAndStatusIn(table.getId(),
+                    ACTIVE_STATUSES);
             table.setStatus(hasActiveBooking ? resTable.Status.RESERVED : resTable.Status.AVAILABLE);
         }
 
@@ -180,7 +185,8 @@ public class BookingService {
     @Transactional
     public BookingResponse createBooking(BookingRequest request) {
         User user = resolveUser(request.getUserId());
-        List<resTable> tables = resolveTables(request.getTableIds(), null);
+        List<resTable> tables = resolveTables(request.getTableIds(), null, request.getBookingTime(),
+                request.getDurationMinutes());
         validateCapacity(tables, request.getGuestCount());
 
         Booking booking = new Booking();
@@ -196,9 +202,11 @@ public class BookingService {
         Booking bookingInDb = this.bookingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
 
-        List<resTable> oldTables = bookingInDb.getTables() == null ? List.of() : new ArrayList<>(bookingInDb.getTables());
+        List<resTable> oldTables = bookingInDb.getTables() == null ? List.of()
+                : new ArrayList<>(bookingInDb.getTables());
         User user = resolveUser(request.getUserId());
-        List<resTable> newTables = resolveTables(request.getTableIds(), id);
+        List<resTable> newTables = resolveTables(request.getTableIds(), id, request.getBookingTime(),
+                request.getDurationMinutes());
         validateCapacity(newTables, request.getGuestCount());
 
         requestToEntity(bookingInDb, request, user, newTables);
@@ -216,6 +224,28 @@ public class BookingService {
         List<resTable> oldTables = booking.getTables() == null ? List.of() : new ArrayList<>(booking.getTables());
         this.bookingRepository.delete(booking);
         refreshTableStatuses(oldTables);
+    }
+
+    @Transactional
+    public BookingResponse confirmBooking(Integer id) {
+        Booking booking = this.bookingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
+
+        booking.setStatus(Booking.Status.CONFIRMED);
+        Booking savedBooking = this.bookingRepository.save(booking);
+
+        // Set all tables to RESERVED with timestamp
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        List<resTable> tables = savedBooking.getTables();
+        if (tables != null && !tables.isEmpty()) {
+            for (resTable table : tables) {
+                table.setStatus(resTable.Status.RESERVED);
+                table.setReservedAt(now);
+            }
+            this.tableRepository.saveAll(tables);
+        }
+
+        return toResponse(savedBooking);
     }
 
     @Transactional(readOnly = true)

@@ -14,5 +14,14 @@ import lombok.NoArgsConstructor;
 @Builder
 public class UserRequest {
 
+    @NotBlank(message = "Fullname is required")
+    private String fullname;
+
+    @Email(message = "Email should be valid")
+    private String email;
+
+    @NotBlank(message = "Phone is required")
+    private String phone;
+
     private Boolean isActive;
 }

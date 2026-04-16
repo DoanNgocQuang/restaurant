@@ -2,96 +2,81 @@ import { renderNavbar, renderFooter } from '../components/index.js';
 
 const API = 'http://localhost:8080/api';
 
-/* ================= TOKEN ================= */
 const getToken = () => localStorage.getItem('token');
+const get = (id) => document.getElementById(id);
 
-/* ================= INIT ================= */
 document.addEventListener('DOMContentLoaded', () => {
   renderNavbar();
   renderFooter();
   renderHome();
 });
 
-/* ================= HELPERS ================= */
-const get = (id) => document.getElementById(id);
-
-const fetchAPI = async (url) => {
-  const res = await fetch(url, {
+async function fetchAPI(url) {
+  const response = await fetch(url, {
     headers: {
       'Content-Type': 'application/json',
-      ...(getToken() && {
-        Authorization: `Bearer ${getToken()}`
-      })
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {})
     }
   });
 
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.message || 'API error');
+  const json = await response.json();
+  if (!response.ok || json?.status === 'error') {
+    throw new Error(json?.message || 'API error');
+  }
 
   return json.data;
-};
+}
 
-/* ================= UI COMPONENTS ================= */
+function formatCurrency(value) {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0
+  }).format(Number(value || 0));
+}
 
-const backBtn = () => `
-  <button id="back"
-    class="mb-6 text-slate-300 hover:text-white hover:underline transition">
-    ← Back
-  </button>
-`;
+function backBtn() {
+  return `
+    <button id="back" class="mb-6 text-slate-300 transition hover:text-white hover:underline">
+      ← Quay lại
+    </button>
+  `;
+}
 
-const listItem = (title, desc, right, attrName, attrValue) => `
-  <div 
-    class="flex justify-between items-center bg-white/5 backdrop-blur-md 
-           border border-white/10 rounded-xl p-5 cursor-pointer 
-           hover:bg-white/10 hover:scale-[1.01] transition-all duration-200"
-    ${attrName}="${attrValue}"
-  >
-    <div>
-      <h4 class="font-bold text-white text-lg">${title}</h4>
-      <p class="text-sm text-slate-400 mt-1">${desc || ''}</p>
+function listItem(title, desc, right, attrName, attrValue) {
+  return `
+    <div
+      class="flex cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/5 p-5 backdrop-blur-md transition-all duration-200 hover:scale-[1.01] hover:bg-white/10"
+      ${attrName}="${attrValue}"
+    >
+      <div>
+        <h4 class="text-lg font-bold text-white">${title}</h4>
+        <p class="mt-1 text-sm text-slate-400">${desc || ''}</p>
+      </div>
+      <span class="text-lg font-semibold text-primary">${right}</span>
     </div>
-
-    <span class="text-primary font-semibold text-lg">${right}</span>
-  </div>
-`;
-
-/* ================= HOME ================= */
+  `;
+}
 
 function renderHome() {
   const el = get('menu-container');
 
   el.innerHTML = `
-    <div class="grid md:grid-cols-2 gap-12">
-
-      <div id="btn-category"
-        class="group rounded-2xl border border-primary/20 p-10 cursor-pointer 
-               bg-white/5 backdrop-blur-md 
-               hover:bg-primary/10 hover:scale-[1.02] transition-all shadow-xl">
-        <h2 class="text-3xl font-bold text-white group-hover:text-primary transition">
-          Danh mục món
-        </h2>
-        <p class="text-slate-400 mt-2">Khám phá các món ăn</p>
+    <div class="grid gap-12 md:grid-cols-2">
+      <div id="btn-category" class="group cursor-pointer rounded-2xl border border-primary/20 bg-white/5 p-10 shadow-xl backdrop-blur-md transition-all hover:scale-[1.02] hover:bg-primary/10">
+        <h2 class="text-3xl font-bold text-white transition group-hover:text-primary">Danh mục món</h2>
+        <p class="mt-2 text-slate-400">Khám phá các món ăn đang phục vụ</p>
       </div>
-
-      <div id="btn-combo"
-        class="group rounded-2xl border border-primary/20 p-10 cursor-pointer 
-               bg-white/5 backdrop-blur-md 
-               hover:bg-primary/10 hover:scale-[1.02] transition-all shadow-xl">
-        <h2 class="text-3xl font-bold text-white group-hover:text-primary transition">
-          Combo
-        </h2>
-        <p class="text-slate-400 mt-2">Combo tiết kiệm</p>
+      <div id="btn-combo" class="group cursor-pointer rounded-2xl border border-primary/20 bg-white/5 p-10 shadow-xl backdrop-blur-md transition-all hover:scale-[1.02] hover:bg-primary/10">
+        <h2 class="text-3xl font-bold text-white transition group-hover:text-primary">Combo</h2>
+        <p class="mt-2 text-slate-400">Combo tiết kiệm đang mở bán</p>
       </div>
-
     </div>
   `;
 
   get('btn-category').onclick = renderCategoryList;
   get('btn-combo').onclick = renderComboList;
 }
-
-/* ================= CATEGORY ================= */
 
 async function renderCategoryList() {
   const el = get('menu-container');
@@ -102,56 +87,48 @@ async function renderCategoryList() {
     el.innerHTML = `
       ${backBtn()}
       <div class="space-y-4">
-        ${categories.map(c =>
-          listItem(c.name, '', c.foodCount || 0, 'data-name', c.name)
-        ).join('')}
+        ${categories.map((category) => listItem(category.name, category.description || '', `${category.foodCount || 0} món`, 'data-name', category.name)).join('')}
       </div>
     `;
 
-    el.querySelectorAll('[data-name]').forEach(item => {
+    el.querySelectorAll('[data-name]').forEach((item) => {
       item.onclick = () => renderFoodList(item.dataset.name);
     });
 
     get('back').onclick = renderHome;
-
-  } catch {
-    el.innerHTML = `<p class="text-red-500">Lỗi load category</p>`;
+  } catch (error) {
+    el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải danh mục'}</p>`;
   }
 }
-
-/* ================= FOOD LIST ================= */
 
 async function renderFoodList(categoryName) {
   const el = get('menu-container');
 
   try {
-    const foods = await fetchAPI(
-      `${API}/foods?categoryName=${encodeURIComponent(categoryName)}`
-    );
+    const foods = await fetchAPI(`${API}/foods?categoryName=${encodeURIComponent(categoryName)}`);
+    const activeFoods = foods.filter((food) => food.status === 'AVAILABLE');
 
     el.innerHTML = `
       ${backBtn()}
-      <h2 class="text-3xl font-bold mb-6 text-white">${categoryName}</h2>
-
+      <h2 class="mb-6 text-3xl font-bold text-white">${categoryName}</h2>
       <div class="space-y-4">
-        ${foods.map(f =>
-          listItem(f.name, f.description, `$${f.price}`, 'data-id', f.id)
-        ).join('')}
+        ${activeFoods.map((food) => listItem(food.name, food.description, formatCurrency(food.price), 'data-id', food.id)).join('')}
       </div>
     `;
 
-    el.querySelectorAll('[data-id]').forEach(item => {
+    if (activeFoods.length === 0) {
+      el.innerHTML += `<p class="mt-6 text-slate-400">Danh mục này hiện chưa có món đang phục vụ.</p>`;
+    }
+
+    el.querySelectorAll('[data-id]').forEach((item) => {
       item.onclick = () => renderFoodDetail(item.dataset.id);
     });
 
     get('back').onclick = renderCategoryList;
-
-  } catch {
-    el.innerHTML = `<p class="text-red-500">Lỗi load food</p>`;
+  } catch (error) {
+    el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải món ăn'}</p>`;
   }
 }
-
-/* ================= FOOD DETAIL ================= */
 
 async function renderFoodDetail(id) {
   const el = get('menu-container');
@@ -161,82 +138,65 @@ async function renderFoodDetail(id) {
 
     el.innerHTML = `
       ${backBtn()}
-
-      <div class="grid md:grid-cols-2 gap-12 items-center">
-
-        <img src="${food.imageUrl || '/images/placeholder.jpg'}"
-             class="rounded-2xl h-[400px] w-full object-cover shadow-2xl"/>
-
+      <div class="grid items-center gap-12 md:grid-cols-2">
+        <img src="${food.imageUrl || '/images/placeholder.jpg'}" class="h-[400px] w-full rounded-2xl object-cover shadow-2xl"/>
         <div class="space-y-4">
           <h2 class="text-4xl font-black text-white">${food.name}</h2>
-
-          <p class="text-slate-300">
-            ${food.description || ''}
-          </p>
-
-          <p class="text-2xl font-bold text-primary">$${food.price}</p>
-
-          <div class="flex items-center gap-4 mt-6">
-            <input id="qty" type="number" value="1" min="1"
-              class="w-20 border border-white/20 bg-black/50 px-3 py-2 rounded-lg text-white"/>
-
-            <button id="add"
-              class="bg-primary text-black px-6 py-3 rounded-xl font-bold 
-                     hover:scale-105 transition-all">
-              🛒 Thêm vào giỏ
+          <p class="text-slate-300">${food.description || ''}</p>
+          <p class="text-2xl font-bold text-primary">${formatCurrency(food.price)}</p>
+          <div class="mt-6 flex items-center gap-4">
+            <input id="qty" type="number" value="1" min="1" class="w-20 rounded-lg border border-white/20 bg-black/50 px-3 py-2 text-white"/>
+            <button id="add" class="rounded-xl bg-primary px-6 py-3 font-bold text-black transition-all hover:scale-105">
+              Thêm vào giỏ
             </button>
           </div>
         </div>
-
       </div>
     `;
 
     get('add').onclick = () => {
       addToCart({
-        type: "FOOD",
+        type: 'FOOD',
         itemId: food.id,
         name: food.name,
-        price: food.price,
+        price: Number(food.price),
         quantity: Number(get('qty').value || 1)
       });
     };
 
-    get('back').onclick = renderCategoryList;
-
-  } catch {
-    el.innerHTML = `<p class="text-red-500">Lỗi food detail</p>`;
+    get('back').onclick = () => renderFoodList(food.category?.name || '');
+  } catch (error) {
+    el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải chi tiết món ăn'}</p>`;
   }
 }
-
-/* ================= COMBO ================= */
 
 async function renderComboList() {
   const el = get('menu-container');
 
   try {
     const combos = await fetchAPI(`${API}/combos`);
+    const activeCombos = combos.filter((combo) => combo.status === 'AVAILABLE');
 
     el.innerHTML = `
       ${backBtn()}
       <div class="space-y-4">
-        ${combos.map(c =>
-          listItem(c.name, c.description, `$${c.price}`, 'data-id', c.id)
-        ).join('')}
+        ${activeCombos.map((combo) => listItem(combo.name, combo.description, formatCurrency(combo.price), 'data-id', combo.id)).join('')}
       </div>
     `;
 
-    el.querySelectorAll('[data-id]').forEach(item => {
+    if (activeCombos.length === 0) {
+      el.innerHTML += `<p class="mt-6 text-slate-400">Hiện chưa có combo đang phục vụ.</p>`;
+    }
+
+    el.querySelectorAll('[data-id]').forEach((item) => {
       item.onclick = () => renderComboDetail(item.dataset.id);
     });
 
     get('back').onclick = renderHome;
-
-  } catch {
-    el.innerHTML = `<p class="text-red-500">Lỗi load combo</p>`;
+  } catch (error) {
+    el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải combo'}</p>`;
   }
 }
-
-/* ================= COMBO DETAIL ================= */
 
 async function renderComboDetail(id) {
   const el = get('menu-container');
@@ -246,52 +206,66 @@ async function renderComboDetail(id) {
 
     el.innerHTML = `
       ${backBtn()}
-
-      <div class="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10 shadow-2xl space-y-4">
+      <div class="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-md">
         <h2 class="text-3xl font-bold text-white">${combo.name}</h2>
-
         <p class="text-slate-300">${combo.description || ''}</p>
-
-        <p class="text-2xl font-bold text-primary">$${combo.price}</p>
-
-        <button id="add"
-          class="bg-primary text-black px-6 py-3 rounded-xl font-bold 
-                 hover:scale-105 transition-all">
-          🛒 Thêm combo
+        <p class="text-2xl font-bold text-primary">${formatCurrency(combo.price)}</p>
+        <div class="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-slate-300">
+          ${(combo.foods || []).length > 0
+            ? combo.foods.map((food) => `<div>${food.foodName}</div>`).join('')
+            : 'Combo này chưa có mô tả món đi kèm.'}
+        </div>
+        <button id="add" class="rounded-xl bg-primary px-6 py-3 font-bold text-black transition-all hover:scale-105">
+          Thêm combo
         </button>
       </div>
     `;
 
     get('add').onclick = () => {
       addToCart({
-        type: "COMBO",
+        type: 'COMBO',
         itemId: combo.id,
         name: combo.name,
-        price: combo.price,
+        price: Number(combo.price),
         quantity: 1
       });
     };
 
     get('back').onclick = renderComboList;
-
-  } catch {
-    el.innerHTML = `<p class="text-red-500">Lỗi combo detail</p>`;
+  } catch (error) {
+    el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải chi tiết combo'}</p>`;
   }
 }
 
-/* ================= CART ================= */
+async function addToCart(item) {
+  if (!getToken()) {
+    alert("Vui lòng đăng nhập trước khi gọi món.");
+    window.location.href = "/pages/login.html";
+    return;
+  }
 
-function addToCart(item) {
-  const cart = JSON.parse(localStorage.getItem('cart')) || [];
+  try {
+    const booking = await fetchAPI(`${API}/bookings/my-current`);
+    if (!booking) {
+      alert("Bạn cần phải đặt bàn trước khi có thể gọi món!");
+      window.location.href = "/pages/reservations.html";
+      return;
+    }
+  } catch (error) {
+    alert("Vui lòng đăng nhập lại để gọi món.");
+    window.location.href = "/pages/login.html";
+    return;
+  }
 
-  const idx = cart.findIndex(i =>
-    i.type === item.type && i.itemId === item.itemId
-  );
+  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+  const existingIndex = cart.findIndex((cartItem) => cartItem.type === item.type && cartItem.itemId === item.itemId);
 
-  if (idx > -1) cart[idx].quantity += item.quantity;
-  else cart.push(item);
+  if (existingIndex > -1) {
+    cart[existingIndex].quantity += item.quantity;
+  } else {
+    cart.push(item);
+  }
 
   localStorage.setItem('cart', JSON.stringify(cart));
-
-  alert("Đã thêm vào giỏ hàng 🛒");
+  alert('Đã thêm vào giỏ hàng.');
 }

@@ -1,122 +1,113 @@
-function initCustomers() {
-  const customersTbody = document.getElementById('customers-tbody');
-  if (customersTbody) {
-    const customers = [
-      { id: 1, name: 'Nguyễn Văn A', phone: '0901234567', points: 1500, tier: 'Kim Cương' },
-      { id: 2, name: 'Trần Thị B', phone: '0987654321', points: 800, tier: 'Vàng' },
-      { id: 3, name: 'Lê Văn C', phone: '0912345678', points: 300, tier: 'Bạc' }
-    ];
-
-    let html = '';
-    customers.forEach(customer => {
-      let tierClass = '';
-      switch (customer.tier) {
-        case 'Kim Cương': tierClass = 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'; break;
-        case 'Vàng': tierClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'; break;
-        case 'Bạc': tierClass = 'bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-300'; break;
-        default: tierClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-      }
-
-      html += `
-        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="font-bold text-sm text-slate-900 dark:text-white">${customer.name}</div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${customer.phone}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">${customer.points}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${tierClass}">${customer.tier}</span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-            <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 mr-3" onclick="openEditCustomerModal(${customer.id})">Sửa</button>
-            <button class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" onclick="deleteCustomer(${customer.id})">Xóa</button>
-          </td>
-        </tr>
-      `;
-    });
-    customersTbody.innerHTML = html;
-  }
-}
-
-// Override openModal for customers
-const originalOpenModal = window.openModal;
-window.openModal = function(modalId) {
-  if (modalId === 'modal-add-customer') {
-    const content = `
-      <div>
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tên khách hàng</label>
-        <input type="text" id="add-customer-name" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Số điện thoại</label>
-        <input type="text" id="add-customer-phone" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Điểm tích lũy</label>
-        <input type="number" id="add-customer-points" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50" value="0">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Hạng thành viên</label>
-        <select id="add-customer-tier" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
-          <option value="Thành viên">Thành viên</option>
-          <option value="Bạc">Bạc</option>
-          <option value="Vàng">Vàng</option>
-          <option value="Kim Cương">Kim Cương</option>
-        </select>
-      </div>
-    `;
-    const footer = `
-      <button class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors" onclick="closeGlobalModal()">Hủy</button>
-      <button class="px-5 py-2.5 text-sm font-bold text-white bg-primary hover:bg-rose-600 rounded-xl transition-colors" onclick="saveAddCustomer()">Thêm khách hàng</button>
-    `;
-    openGlobalModal('Thêm khách hàng', content, footer);
-  } else if (originalOpenModal) {
-    originalOpenModal(modalId);
-  }
+const customersState = {
+  users: [],
+  query: ''
 };
 
-function openEditCustomerModal(id) {
-  const content = `
-    <input type="hidden" id="edit-customer-id" value="${id}">
-    <div>
-      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tên khách hàng</label>
-      <input type="text" id="edit-customer-name" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Số điện thoại</label>
-      <input type="text" id="edit-customer-phone" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Điểm tích lũy</label>
-      <input type="number" id="edit-customer-points" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
-    </div>
-    <div>
-      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Hạng thành viên</label>
-      <select id="edit-customer-tier" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
-        <option value="Kim Cương">Kim Cương</option>
-        <option value="Vàng">Vàng</option>
-        <option value="Bạc">Bạc</option>
-        <option value="Thành viên">Thành viên</option>
-      </select>
-    </div>
-  `;
-  const footer = `
-    <button class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors" onclick="closeGlobalModal()">Hủy</button>
-    <button class="px-5 py-2.5 text-sm font-bold text-white bg-primary hover:bg-rose-600 rounded-xl transition-colors" onclick="saveEditCustomer()">Lưu thay đổi</button>
-  `;
-  openGlobalModal('Sửa khách hàng', content, footer);
+async function initCustomers() {
+  window.AdminApp.configureGlobalSearch({
+    placeholder: 'Tìm theo tên, email, số điện thoại...',
+    handler: (value) => {
+      customersState.query = value.toLowerCase();
+      renderCustomers();
+    }
+  });
+  await loadCustomers();
 }
 
-function saveAddCustomer() {
-  closeGlobalModal();
+async function loadCustomers() {
+  const tbody = document.getElementById('customers-tbody');
+  if (tbody) {
+    tbody.innerHTML = window.AdminApp.renderTableMessage(7, 'Đang tải danh sách người dùng...');
+  }
+
+  try {
+    const users = await window.AdminApp.request('/users');
+    customersState.users = Array.isArray(users) ? users : [];
+    renderCustomersStats();
+    renderCustomers();
+  } catch (error) {
+    console.error(error);
+    if (tbody) {
+      tbody.innerHTML = window.AdminApp.renderTableMessage(7, error.message || 'Không thể tải người dùng.', 'error');
+    }
+  }
 }
 
-function saveEditCustomer() {
-  closeGlobalModal();
+function getFilteredUsers() {
+  return customersState.users.filter((user) => {
+    const haystack = [
+      user.fullname,
+      user.email,
+      user.phone,
+      user.role
+    ].join(' ').toLowerCase();
+
+    return !customersState.query || haystack.includes(customersState.query);
+  });
 }
 
-function deleteCustomer(id) {
-  if(confirm('Bạn có chắc chắn muốn xóa khách hàng này?')) {
-    // delete
+function renderCustomersStats() {
+  const users = customersState.users;
+  document.getElementById('customers-total-count').textContent = window.AdminApp.formatNumber(users.length);
+  document.getElementById('customers-active-count').textContent = window.AdminApp.formatNumber(users.filter((user) => user.isActive).length);
+  document.getElementById('customers-admin-count').textContent = window.AdminApp.formatNumber(users.filter((user) => user.role === 'ADMIN').length);
+}
+
+function renderCustomers() {
+  const tbody = document.getElementById('customers-tbody');
+  if (!tbody) return;
+
+  const users = getFilteredUsers();
+  if (users.length === 0) {
+    tbody.innerHTML = window.AdminApp.renderTableMessage(7, 'Không có người dùng phù hợp.');
+    return;
+  }
+
+  tbody.innerHTML = users.map((user) => `
+    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+      <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">${window.AdminApp.escapeHtml(user.fullname || '--')}</td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.escapeHtml(user.email || '--')}</td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.escapeHtml(user.phone || '--')}</td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        <span class="rounded-full px-2.5 py-1 text-xs font-bold ${user.role === 'ADMIN' ? 'bg-primary/10 text-primary' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}">
+          ${window.AdminApp.escapeHtml(user.role || '--')}
+        </span>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        <span class="rounded-full px-2.5 py-1 text-xs font-bold ${user.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'}">
+          ${user.isActive ? 'ACTIVE' : 'DISABLED'}
+        </span>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatDateTime(user.createdAt)}</td>
+      <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+        <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300" onclick="toggleCustomerStatus(${user.id})">
+          ${user.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'}
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function toggleCustomerStatus(userId) {
+  const user = customersState.users.find((item) => item.id === userId);
+  if (!user) {
+    return;
+  }
+
+  const nextState = !user.isActive;
+  const confirmed = window.AdminApp.confirmAction(`Bạn có chắc muốn ${nextState ? 'kích hoạt' : 'vô hiệu hóa'} tài khoản ${user.fullname}?`);
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await window.AdminApp.request(`/users/${userId}`, {
+      method: 'PUT',
+      body: { isActive: nextState }
+    });
+    window.AdminApp.showToast(`Đã ${nextState ? 'kích hoạt' : 'vô hiệu hóa'} tài khoản.`);
+    await loadCustomers();
+  } catch (error) {
+    window.AdminApp.showToast(error.message || 'Không thể cập nhật trạng thái tài khoản.', 'error');
   }
 }

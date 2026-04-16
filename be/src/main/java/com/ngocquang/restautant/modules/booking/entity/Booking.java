@@ -1,6 +1,5 @@
 package com.ngocquang.restautant.modules.booking.entity;
 
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +15,7 @@ import com.ngocquang.restautant.modules.table.entity.resTable;
 import com.ngocquang.restautant.modules.user.entity.User;
 
 @Entity
-@Table(name="booking")
+@Table(name = "booking")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -27,10 +26,10 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false,length=15)
+    @Column(nullable = false, length = 15)
     private String contactPhone;
 
-    @Column(nullable = false,length = 30)
+    @Column(nullable = false, length = 30)
     private String contactName;
 
     @Column(nullable = false)
@@ -39,32 +38,33 @@ public class Booking {
     @Column(nullable = false)
     private Integer guestCount;
 
-    @Column(nullable = false,columnDefinition = "TEXT")
+    @Column(nullable = false)
+    private Integer durationMinutes = 120;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
     @Lob
     private String note;
 
-    public enum Status{CONFIRMED,PENDING,CANCELLED}
+    public enum Status {
+        CONFIRMED, PENDING, CANCELLED
+    }
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private Status status=Status.PENDING;
+    private Status status = Status.PENDING;
 
     @Column(nullable = false)
-    private LocalDateTime createdAt=LocalDateTime.now();
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="user_id")
+    @JoinColumn(name = "user_id")
     private User user;
 
     @OneToMany(mappedBy = "booking")
     private List<Order> orders;
 
     @ManyToMany
-    @JoinTable(
-            name = "booked_table",
-            joinColumns = @JoinColumn(name = "booking_id"),
-            inverseJoinColumns = @JoinColumn(name = "table_id")
-    )
+    @JoinTable(name = "booked_table", joinColumns = @JoinColumn(name = "booking_id"), inverseJoinColumns = @JoinColumn(name = "table_id"))
     private List<resTable> tables;
 
     @OneToOne(mappedBy = "booking")

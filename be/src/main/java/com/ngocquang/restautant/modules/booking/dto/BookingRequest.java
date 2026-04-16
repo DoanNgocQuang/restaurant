@@ -38,6 +38,8 @@ public class BookingRequest {
     @Min(value = 1, message = "Guest count must be at least 1")
     private Integer guestCount;
 
+    private Integer durationMinutes;
+
     @NotBlank(message = "Note is required")
     private String note;
 

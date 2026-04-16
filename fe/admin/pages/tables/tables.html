@@ -1,15 +1,29 @@
-      <div id="view-tables" class="flex-1 overflow-y-auto p-8 space-y-8">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Quản lý bàn</h2>
-            <p class="text-slate-500 mt-1">Theo dõi trạng thái bàn và đặt bàn.</p>
-          </div>
-          <button class="flex items-center gap-2 bg-gradient-to-r from-rose-600 to-primary hover:from-rose-500 hover:to-rose-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-rose-900/20 hover:shadow-rose-900/40 hover:-translate-y-0.5" onclick="openModal('modal-add-table')">
-            <span class="material-symbols-outlined">add</span>
-            Thêm bàn
-          </button>
-        </div>
-        <div id="tables-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          <!-- JS Render -->
-        </div>
-      </div>
+<div id="view-tables" class="flex-1 overflow-y-auto p-8 space-y-8">
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h2 class="text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Quản lý bàn</h2>
+      <p class="text-slate-500 mt-1">Tạo mới, cập nhật và theo dõi trạng thái bàn ăn từ backend.</p>
+    </div>
+    <button id="add-table-btn" class="flex items-center gap-2 bg-gradient-to-r from-rose-600 to-primary hover:from-rose-500 hover:to-rose-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-rose-900/20 hover:shadow-rose-900/40 hover:-translate-y-0.5">
+      <span class="material-symbols-outlined">add</span>
+      Thêm bàn
+    </button>
+  </div>
+
+  <div class="grid gap-6 md:grid-cols-3">
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <p class="text-sm text-slate-500">Tổng số bàn</p>
+      <p id="tables-total-count" class="mt-2 text-3xl font-black text-slate-900 dark:text-white">0</p>
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <p class="text-sm text-slate-500">Bàn khả dụng</p>
+      <p id="tables-available-count" class="mt-2 text-3xl font-black text-emerald-600">0</p>
+    </div>
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+      <p class="text-sm text-slate-500">Bàn đã giữ / đang dùng</p>
+      <p id="tables-busy-count" class="mt-2 text-3xl font-black text-amber-600">0</p>
+    </div>
+  </div>
+
+  <div id="tables-grid" class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3"></div>
+</div>

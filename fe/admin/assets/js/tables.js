@@ -1,125 +1,176 @@
-function initTables() {
-  const tablesGrid = document.getElementById('tables-grid');
-  if (tablesGrid) {
-    const tables = [
-      { id: 1, name: 'Bàn 01', capacity: 4, status: 'Trống' },
-      { id: 2, name: 'Bàn 02', capacity: 2, status: 'Đang phục vụ' },
-      { id: 3, name: 'Bàn 03', capacity: 6, status: 'Đã đặt' },
-      { id: 4, name: 'Bàn 04', capacity: 4, status: 'Trống' },
-      { id: 5, name: 'Bàn VIP 1', capacity: 8, status: 'Đang phục vụ' }
-    ];
-
-    let html = '';
-    tables.forEach(table => {
-      let statusClass = '';
-      let icon = '';
-      switch (table.status) {
-        case 'Trống':
-          statusClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800';
-          icon = 'check_circle';
-          break;
-        case 'Đang phục vụ':
-          statusClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800';
-          icon = 'restaurant';
-          break;
-        case 'Đã đặt':
-          statusClass = 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800';
-          icon = 'event_seat';
-          break;
-      }
-
-      html += `
-        <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col transition-transform hover:-translate-y-1 hover:shadow-md">
-          <div class="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between ${statusClass.split(' ')[0]} dark:bg-opacity-10">
-            <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-xl ${statusClass.split(' ')[1]}">${icon}</span>
-              <h3 class="font-bold text-slate-900 dark:text-white">${table.name}</h3>
-            </div>
-            <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${statusClass} border">${table.status}</span>
-          </div>
-          <div class="p-4 flex-1 flex flex-col justify-center items-center gap-2">
-            <span class="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600">table_restaurant</span>
-            <p class="text-sm text-slate-500 font-medium">${table.capacity} người</p>
-          </div>
-          <div class="p-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
-            <button class="text-xs font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300" onclick="openEditTableModal(${table.id})">Sửa bàn</button>
-            <button class="text-xs font-bold text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" onclick="deleteTable(${table.id})">Xóa</button>
-          </div>
-        </div>
-      `;
-    });
-    tablesGrid.innerHTML = html;
-  }
-}
-
-const originalOpenModalTables = window.openModal;
-window.openModal = function(modalId) {
-  if (modalId === 'modal-add-table') {
-    const content = `
-      <div>
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tên bàn</label>
-        <input type="text" id="add-table-name" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Sức chứa</label>
-        <input type="number" id="add-table-capacity" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Trạng thái</label>
-        <select id="add-table-status" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
-          <option value="Trống">Trống</option>
-          <option value="Đang phục vụ">Đang phục vụ</option>
-          <option value="Đã đặt">Đã đặt</option>
-        </select>
-      </div>
-    `;
-    const footer = `
-      <button class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors" onclick="closeGlobalModal()">Hủy</button>
-      <button class="px-5 py-2.5 text-sm font-bold text-white bg-primary hover:bg-rose-600 rounded-xl transition-colors" onclick="saveAddTable()">Thêm bàn</button>
-    `;
-    openGlobalModal('Thêm bàn', content, footer);
-  } else if (originalOpenModalTables) {
-    originalOpenModalTables(modalId);
-  }
+const tablesState = {
+  tables: [],
+  query: ''
 };
 
-function openEditTableModal(id) {
+async function initTables() {
+  bindTablesEvents();
+  window.AdminApp.configureGlobalSearch({
+    placeholder: 'Tìm theo tên bàn hoặc mô tả...',
+    handler: (value) => {
+      tablesState.query = value.toLowerCase();
+      renderTables();
+    }
+  });
+  await loadTables();
+}
+
+function bindTablesEvents() {
+  const addTableButton = document.getElementById('add-table-btn');
+  if (addTableButton) {
+    addTableButton.addEventListener('click', () => openTableModal());
+  }
+}
+
+async function loadTables() {
+  const grid = document.getElementById('tables-grid');
+  if (grid) {
+    grid.innerHTML = '<div class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Đang tải danh sách bàn...</div>';
+  }
+
+  try {
+    const tables = await window.AdminApp.request('/tables');
+    tablesState.tables = Array.isArray(tables) ? tables : [];
+    renderTableStats();
+    renderTables();
+  } catch (error) {
+    console.error(error);
+    if (grid) {
+      grid.innerHTML = `<div class="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">${window.AdminApp.escapeHtml(error.message || 'Không thể tải danh sách bàn.')}</div>`;
+    }
+  }
+}
+
+function renderTableStats() {
+  const tables = tablesState.tables;
+  document.getElementById('tables-total-count').textContent = window.AdminApp.formatNumber(tables.length);
+  document.getElementById('tables-available-count').textContent = window.AdminApp.formatNumber(tables.filter((table) => table.status === 'AVAILABLE').length);
+  document.getElementById('tables-busy-count').textContent = window.AdminApp.formatNumber(tables.filter((table) => table.status !== 'AVAILABLE').length);
+}
+
+function getFilteredTables() {
+  return tablesState.tables.filter((table) => {
+    const haystack = [table.name, table.description, table.status].join(' ').toLowerCase();
+    return !tablesState.query || haystack.includes(tablesState.query);
+  });
+}
+
+function renderTables() {
+  const grid = document.getElementById('tables-grid');
+  if (!grid) return;
+
+  const tables = getFilteredTables();
+  if (tables.length === 0) {
+    grid.innerHTML = '<div class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Không có bàn phù hợp.</div>';
+    return;
+  }
+
+  grid.innerHTML = tables.map((table) => {
+    const statusClassMap = {
+      AVAILABLE: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800',
+      RESERVED: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',
+      OCCUPIED: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
+    };
+
+    return `
+      <div class="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-700">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white">${window.AdminApp.escapeHtml(table.name)}</h3>
+            <p class="text-sm text-slate-500">${window.AdminApp.escapeHtml(table.description || '--')}</p>
+          </div>
+          <span class="rounded-full border px-3 py-1 text-xs font-bold ${statusClassMap[table.status] || statusClassMap.AVAILABLE}">
+            ${window.AdminApp.escapeHtml(table.status)}
+          </span>
+        </div>
+        <div class="flex-1 px-5 py-6">
+          <div class="flex items-center gap-3 text-slate-500">
+            <span class="material-symbols-outlined">table_restaurant</span>
+            <span class="text-sm">Sức chứa ${window.AdminApp.formatNumber(table.capacity)} khách</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-5 py-4 text-sm dark:border-slate-700 dark:bg-slate-900/50">
+          <button class="font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300" onclick="openTableModal(${table.id})">Sửa</button>
+          <button class="font-bold text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" onclick="deleteTable(${table.id})">Xóa</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openTableModal(tableId = null) {
+  const table = tableId ? tablesState.tables.find((item) => item.id === tableId) : null;
+  const title = table ? 'Cập nhật bàn' : 'Thêm bàn';
+
   const content = `
-    <input type="hidden" id="edit-table-id" value="${id}">
     <div>
-      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tên bàn</label>
-      <input type="text" id="edit-table-name" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
+      <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Tên bàn</label>
+      <input type="text" id="table-name" value="${window.AdminApp.escapeHtml(table?.name || '')}" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-700 dark:bg-slate-900" />
     </div>
     <div>
-      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Sức chứa</label>
-      <input type="text" id="edit-table-capacity" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
+      <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Mô tả</label>
+      <textarea id="table-description" rows="4" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-700 dark:bg-slate-900">${window.AdminApp.escapeHtml(table?.description || '')}</textarea>
     </div>
-    <div>
-      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Trạng thái</label>
-      <select id="edit-table-status" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/50">
-        <option value="Trống">Trống</option>
-        <option value="Đang phục vụ">Đang phục vụ</option>
-        <option value="Đã đặt">Đã đặt</option>
-      </select>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Sức chứa</label>
+        <input type="number" min="1" id="table-capacity" value="${table?.capacity || ''}" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-700 dark:bg-slate-900" />
+      </div>
+      <div>
+        <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Trạng thái</label>
+        <select id="table-status" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-700 dark:bg-slate-900">
+          ${['AVAILABLE', 'RESERVED', 'OCCUPIED'].map((status) => `
+            <option value="${status}" ${status === (table?.status || 'AVAILABLE') ? 'selected' : ''}>${status}</option>
+          `).join('')}
+        </select>
+      </div>
     </div>
   `;
+
   const footer = `
-    <button class="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors" onclick="closeGlobalModal()">Hủy</button>
-    <button class="px-5 py-2.5 text-sm font-bold text-white bg-primary hover:bg-rose-600 rounded-xl transition-colors" onclick="saveEditTable()">Lưu thay đổi</button>
+    <button class="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-700" onclick="closeGlobalModal()">Hủy</button>
+    <button class="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-rose-600" onclick="saveTableForm(${table?.id || 'null'})">
+      ${table ? 'Lưu thay đổi' : 'Thêm bàn'}
+    </button>
   `;
-  openGlobalModal('Sửa bàn', content, footer);
+
+  openGlobalModal(title, content, footer);
 }
 
-function saveAddTable() {
-  closeGlobalModal();
+async function saveTableForm(tableId) {
+  const payload = {
+    name: document.getElementById('table-name').value.trim(),
+    description: document.getElementById('table-description').value.trim(),
+    capacity: Number(document.getElementById('table-capacity').value),
+    status: document.getElementById('table-status').value
+  };
+
+  try {
+    if (tableId) {
+      await window.AdminApp.request(`/tables/${tableId}`, { method: 'PUT', body: payload });
+      window.AdminApp.showToast('Đã cập nhật bàn.');
+    } else {
+      await window.AdminApp.request('/tables', { method: 'POST', body: payload });
+      window.AdminApp.showToast('Đã thêm bàn mới.');
+    }
+
+    closeGlobalModal();
+    await loadTables();
+  } catch (error) {
+    window.AdminApp.showToast(error.message || 'Không thể lưu bàn.', 'error');
+  }
 }
 
-function saveEditTable() {
-  closeGlobalModal();
-}
+async function deleteTable(tableId) {
+  if (!window.AdminApp.confirmAction('Bạn có chắc muốn xóa bàn này?')) {
+    return;
+  }
 
-function deleteTable(id) {
-  if(confirm('Bạn có chắc chắn muốn xóa bàn này?')) {
-    // delete
+  try {
+    await window.AdminApp.request(`/tables/${tableId}`, { method: 'DELETE' });
+    window.AdminApp.showToast('Đã xóa bàn.');
+    await loadTables();
+  } catch (error) {
+    window.AdminApp.showToast(error.message || 'Không thể xóa bàn.', 'error');
   }
 }

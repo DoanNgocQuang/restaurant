@@ -1,175 +1,217 @@
-import { renderNavbar, renderFooter } from '../components/index.js';
+import { renderNavbar, renderFooter } from "../components/index.js";
+
+const API = "http://localhost:8080/api";
 
 let step = 1;
-let searchParams = { date: '', time: '', guests: 2 };
+let searchParams = { date: "", time: "", guests: 2 };
 let availableTables = [];
 let selectedTable = null;
 
+function getToken() {
+  return localStorage.getItem("token");
+}
+
+function getUser() {
+  try {
+    return JSON.parse(localStorage.getItem("user") || "{}");
+  } catch (error) {
+    return {};
+  }
+}
+
+function isLoggedIn() {
+  return localStorage.getItem("isLoggedIn") === "true";
+}
+
+async function apiRequest(path, options = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+
+  const token = getToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API}${path}`, {
+    method: options.method || "GET",
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+
+  const json = await response.json().catch(() => null);
+  if (!response.ok || json?.status === "error") {
+    throw new Error(json?.message || `Yêu cầu thất bại (${response.status})`);
+  }
+
+  return json?.data;
+}
+
+function toApiDateTime(date, time) {
+  return `${date}T${time}:00`;
+}
+
+function formatDate(date) {
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(`${date}T00:00:00`));
+}
+
+function getMinDate() {
+  const today = new Date();
+  return today.toISOString().split("T")[0];
+}
+
 function renderReservationFlow() {
-  const container = document.getElementById('reservation-container');
+  const container = document.getElementById("reservation-container");
   if (!container) return;
 
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-
-  if (!isLoggedIn) {
-    window.location.href = '/pages/login.html';
+  if (!isLoggedIn()) {
+    window.location.href = "/pages/login.html";
     return;
   }
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-
+  const user = getUser();
   let html = '<div class="text-white">';
 
   if (step < 4) {
     html += `
-      <div class="flex items-center justify-center mb-8">
-        <div class="flex items-center ${step >= 1 ? 'text-primary' : 'text-slate-500'}">
-          <div class="size-8 rounded-full border-2 flex items-center justify-center font-bold border-current">1</div>
-          <span class="ml-2 font-medium hidden sm:block">Tìm bàn</span>
+      <div class="mb-8 flex items-center justify-center">
+        <div class="flex items-center ${step >= 1 ? "text-primary" : "text-slate-500"}">
+          <div class="size-8 rounded-full border-2 border-current flex items-center justify-center font-bold">1</div>
+          <span class="ml-2 hidden font-medium sm:block">Tìm bàn</span>
         </div>
-        <div class="w-12 h-0.5 mx-2 ${step >= 2 ? 'bg-primary' : 'bg-slate-700'}"></div>
-        <div class="flex items-center ${step >= 2 ? 'text-primary' : 'text-slate-500'}">
-          <div class="size-8 rounded-full border-2 flex items-center justify-center font-bold border-current">2</div>
-          <span class="ml-2 font-medium hidden sm:block">Chọn bàn</span>
+        <div class="mx-2 h-0.5 w-12 ${step >= 2 ? "bg-primary" : "bg-slate-700"}"></div>
+        <div class="flex items-center ${step >= 2 ? "text-primary" : "text-slate-500"}">
+          <div class="size-8 rounded-full border-2 border-current flex items-center justify-center font-bold">2</div>
+          <span class="ml-2 hidden font-medium sm:block">Chọn bàn</span>
         </div>
-        <div class="w-12 h-0.5 mx-2 ${step >= 3 ? 'bg-primary' : 'bg-slate-700'}"></div>
-        <div class="flex items-center ${step >= 3 ? 'text-primary' : 'text-slate-500'}">
-          <div class="size-8 rounded-full border-2 flex items-center justify-center font-bold border-current">3</div>
-          <span class="ml-2 font-medium hidden sm:block">Xác nhận</span>
+        <div class="mx-2 h-0.5 w-12 ${step >= 3 ? "bg-primary" : "bg-slate-700"}"></div>
+        <div class="flex items-center ${step >= 3 ? "text-primary" : "text-slate-500"}">
+          <div class="size-8 rounded-full border-2 border-current flex items-center justify-center font-bold">3</div>
+          <span class="ml-2 hidden font-medium sm:block">Xác nhận</span>
         </div>
       </div>
     `;
   }
 
   if (step === 1) {
+    const minDate = getMinDate();
     html += `
-      <form id="search-form" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <form id="search-form" class="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div class="flex flex-col gap-2">
           <label class="text-xs font-bold uppercase tracking-widest text-primary">Ngày đặt</label>
-          <div class="relative">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-            <input type="date" id="date-input" required value="${searchParams.date}" class="w-full bg-bg-dark/50 border border-primary/30 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-slate-600 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
-          </div>
+          <input type="date" id="date-input" required min="${minDate}" value="${searchParams.date}" class="w-full rounded-lg border border-primary/30 bg-bg-dark/50 py-3 px-4 text-white outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary" />
         </div>
         <div class="flex flex-col gap-2">
           <label class="text-xs font-bold uppercase tracking-widest text-primary">Giờ đặt</label>
-          <div class="relative">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <input type="time" id="time-input" required value="${searchParams.time}" class="w-full bg-bg-dark/50 border border-primary/30 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-slate-600 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
-          </div>
+          <input type="time" id="time-input" required value="${searchParams.time}" class="w-full rounded-lg border border-primary/30 bg-bg-dark/50 py-3 px-4 text-white outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary" />
         </div>
         <div class="flex flex-col gap-2">
           <label class="text-xs font-bold uppercase tracking-widest text-primary">Số lượng khách</label>
-          <div class="relative">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <input type="number" id="guests-input" required min="1" value="${searchParams.guests}" class="w-full bg-bg-dark/50 border border-primary/30 rounded-lg py-3 pl-10 pr-4 text-white placeholder:text-slate-600 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
-          </div>
+          <input type="number" id="guests-input" required min="1" value="${searchParams.guests}" class="w-full rounded-lg border border-primary/30 bg-bg-dark/50 py-3 px-4 text-white outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary" />
         </div>
         <div class="md:col-span-3 pt-4">
-          <button type="submit" id="btn-search" class="w-full inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 py-4 text-lg uppercase tracking-widest gap-2 text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <button type="submit" id="btn-search" class="w-full rounded-md bg-primary py-4 text-lg font-medium uppercase tracking-widest text-white shadow transition-colors hover:bg-primary/90">
             Tìm bàn trống
           </button>
         </div>
       </form>
+      <p id="reservation-search-error" class="mt-4 hidden text-center font-medium text-red-400"></p>
     `;
   } else if (step === 2) {
     html += `
       <div class="space-y-6">
         <div class="flex items-center justify-between">
-          <h3 class="text-xl font-bold">Danh sách bàn trống phù hợp</h3>
-          <button id="btn-back-step1" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2">Đổi thời gian</button>
+          <div>
+            <h3 class="text-xl font-bold">Danh sách bàn trống phù hợp</h3>
+            <p class="mt-1 text-sm text-slate-400">${formatDate(searchParams.date)} lúc ${searchParams.time} cho ${searchParams.guests} khách</p>
+          </div>
+          <button id="btn-back-step1" class="rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-white/5">Đổi thời gian</button>
         </div>
-        
-        ${availableTables.length > 0 ? `
+        ${
+          availableTables.length > 0
+            ? `
           <div class="grid gap-4">
-            ${availableTables.map(table => `
-              <div class="bg-bg-dark/50 border border-primary/30 rounded-xl p-5 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center hover:border-primary transition-colors">
+            ${availableTables
+              .map(
+                (table) => `
+              <div class="flex flex-col items-start justify-between gap-4 rounded-xl border border-primary/30 bg-bg-dark/50 p-5 transition-colors hover:border-primary sm:flex-row sm:items-center">
                 <div>
-                  <div class="flex items-center gap-3 mb-2">
-                    <span class="bg-primary/20 text-primary px-2 py-1 rounded text-xs font-bold">#${table.id}</span>
-                    <h4 class="text-lg font-bold">${table.name || 'Bàn ' + table.id}</h4>
+                  <div class="mb-2 flex items-center gap-3">
+                    <span class="rounded bg-primary/20 px-2 py-1 text-xs font-bold text-primary">#${table.id}</span>
+                    <h4 class="text-lg font-bold">${table.name}</h4>
                   </div>
-                  <div class="flex items-center gap-4 text-sm text-slate-400 mb-2">
-                    <span class="flex items-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                      Tối đa ${table.maxGuests} khách
-                    </span>
-                  </div>
-                  <p class="text-sm text-slate-300 flex items-start gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 shrink-0 text-primary"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-                    ${table.description || 'Không có mô tả'}
-                  </p>
+                  <div class="mb-2 text-sm text-slate-400">Tối đa ${table.capacity} khách</div>
+                  <p class="text-sm text-slate-300">${table.description || "Không có mô tả"}</p>
                 </div>
-                <button class="btn-select-table shrink-0 w-full sm:w-auto inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-4 py-2 text-white" data-id="${table.id}">
+                <button class="btn-select-table w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-primary/90 sm:w-auto" data-id="${table.id}">
                   Chọn bàn này
                 </button>
               </div>
-            `).join('')}
+            `,
+              )
+              .join("")}
           </div>
-        ` : `
-          <div class="text-center py-12 bg-bg-dark/50 rounded-xl border border-dashed border-slate-600">
-            <p class="text-slate-400 mb-4">Rất tiếc, không có bàn nào trống phù hợp với yêu cầu của bạn.</p>
-            <button id="btn-back-step1-empty" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">Thử tìm thời gian khác</button>
+        `
+            : `
+          <div class="rounded-xl border border-dashed border-slate-600 bg-bg-dark/50 py-12 text-center">
+            <p class="mb-4 text-slate-400">Không có bàn trống phù hợp với thời gian này.</p>
+            <button id="btn-back-step1-empty" class="rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-white/5">Tìm lại</button>
           </div>
-        `}
+        `
+        }
       </div>
     `;
   } else if (step === 3 && selectedTable) {
     html += `
       <div class="space-y-6">
-        <h3 class="text-xl font-bold text-center mb-6">Xác nhận thông tin đặt bàn</h3>
-        
-        <div class="bg-bg-dark/50 border border-primary/30 rounded-xl p-6 space-y-4">
+        <h3 class="mb-6 text-center text-xl font-bold">Xác nhận thông tin đặt bàn</h3>
+        <div class="space-y-4 rounded-xl border border-primary/30 bg-bg-dark/50 p-6">
           <div class="grid grid-cols-2 gap-4 border-b border-slate-700 pb-4">
             <div>
-              <span class="text-slate-400 text-sm block mb-1">Ngày đặt</span>
-              <span class="font-medium text-lg">${searchParams.date}</span>
+              <span class="mb-1 block text-sm text-slate-400">Ngày đặt</span>
+              <span class="text-lg font-medium">${formatDate(searchParams.date)}</span>
             </div>
             <div>
-              <span class="text-slate-400 text-sm block mb-1">Giờ đặt</span>
-              <span class="font-medium text-lg">${searchParams.time}</span>
+              <span class="mb-1 block text-sm text-slate-400">Giờ đặt</span>
+              <span class="text-lg font-medium">${searchParams.time}</span>
             </div>
             <div>
-              <span class="text-slate-400 text-sm block mb-1">Số lượng khách</span>
-              <span class="font-medium text-lg">${searchParams.guests} người</span>
+              <span class="mb-1 block text-sm text-slate-400">Số lượng khách</span>
+              <span class="text-lg font-medium">${searchParams.guests} người</span>
             </div>
           </div>
-          
-          <div class="pt-2 border-b border-slate-700 pb-4">
-            <span class="text-slate-400 text-sm block mb-2">Thông tin bàn</span>
+          <div class="border-b border-slate-700 pb-4 pt-2">
+            <span class="mb-2 block text-sm text-slate-400">Thông tin bàn</span>
             <div class="flex items-center gap-3">
-              <span class="bg-primary/20 text-primary px-2 py-1 rounded text-sm font-bold">#${selectedTable.id}</span>
-              <span class="font-bold text-lg">${selectedTable.name || 'Bàn ' + selectedTable.id}</span>
+              <span class="rounded bg-primary/20 px-2 py-1 text-sm font-bold text-primary">#${selectedTable.id}</span>
+              <span class="text-lg font-bold">${selectedTable.name}</span>
+            </div>
+            <p class="mt-2 text-sm text-slate-400">${selectedTable.description || "Không có mô tả"}</p>
+          </div>
+          <div class="grid grid-cols-1 gap-4 border-b border-slate-700 pb-4 pt-2 sm:grid-cols-2">
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold uppercase tracking-widest text-primary">Tên người đặt (*)</label>
+              <input type="text" id="contact-name" required value="${user.fullname || ""}" class="w-full rounded-lg border border-primary/30 bg-bg-dark/50 px-4 py-3 text-white outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary" />
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold uppercase tracking-widest text-primary">Số điện thoại (*)</label>
+              <input type="tel" id="contact-phone" required value="${user.phone || ""}" class="w-full rounded-lg border border-primary/30 bg-bg-dark/50 px-4 py-3 text-white outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary" />
             </div>
           </div>
-
-          <div class="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-slate-700 pb-4">
-              <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-primary">Tên người đặt (*)</label>
-                <input type="text" id="contact-name" required value="${user.username || ''}" class="w-full bg-bg-dark/50 border border-primary/30 rounded-lg py-3 px-4 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
-              </div>
-              <div class="flex flex-col gap-2">
-                <label class="text-xs font-bold uppercase tracking-widest text-primary">Số điện thoại (*)</label>
-                <input type="tel" id="contact-phone" required class="w-full bg-bg-dark/50 border border-primary/30 rounded-lg py-3 px-4 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" />
-              </div>
-          </div>
-
           <div class="flex flex-col gap-2 pt-2">
-            <label class="text-xs font-bold uppercase tracking-widest text-primary">Ghi chú thêm (Tùy chọn)</label>
-            <textarea id="booking-note"
-              class="w-full bg-bg-dark/50 border border-primary/30 rounded-lg py-3 px-4 text-white placeholder:text-slate-600 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none"
-              placeholder="Dị ứng, kỷ niệm ngày cưới..."
-              rows="2"
-            ></textarea>
+            <label class="text-xs font-bold uppercase tracking-widest text-primary">Ghi chú thêm</label>
+            <textarea id="booking-note" rows="3" class="w-full resize-none rounded-lg border border-primary/30 bg-bg-dark/50 px-4 py-3 text-white outline-none transition-all focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Dị ứng, vị trí ngồi mong muốn..."></textarea>
           </div>
         </div>
-
-        <div id="booking-error" class="hidden text-red-500 text-center font-medium"></div>
-
+        <div id="booking-error" class="hidden text-center font-medium text-red-400"></div>
         <div class="flex gap-4 pt-4">
-          <button id="btn-back-step2" class="flex-1 py-4 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground">Quay lại</button>
-          <button id="btn-confirm" class="flex-1 py-4 inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 text-white">
+          <button id="btn-back-step2" class="flex-1 rounded-md border border-white/10 bg-transparent py-4 text-sm font-medium shadow-sm transition-colors hover:bg-white/5">Quay lại</button>
+          <button id="btn-confirm" class="flex-1 rounded-md bg-primary py-4 text-sm font-medium text-white shadow transition-colors hover:bg-primary/90">
             Xác nhận đặt bàn
           </button>
         </div>
@@ -177,155 +219,184 @@ function renderReservationFlow() {
     `;
   } else if (step === 4) {
     html += `
-      <div class="text-center py-8 space-y-6 animate-fade-in-up">
-        <div class="size-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+      <div class="animate-fade-in-up space-y-6 py-8 text-center">
+        <div class="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-green-500/20 text-green-500">
           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
         </div>
         <h3 class="text-3xl font-bold text-white">Đặt bàn thành công!</h3>
-        <p class="text-slate-300 max-w-md mx-auto">
-          Cảm ơn bạn đã lựa chọn L'Elite. Thông tin đặt bàn đã được lưu lại. Chúng tôi rất mong được phục vụ bạn vào ngày ${searchParams.date} lúc ${searchParams.time}.
+        <p class="mx-auto max-w-md text-slate-300">
+          Chúng tôi đã lưu booking của bạn vào hệ thống. Bây giờ bạn có thể sang trang thực đơn để chọn món và gọi món cho booking này.
         </p>
-        
-        <div class="pt-8 flex justify-center gap-4">
-          <button id="btn-reset" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2">Đặt thêm bàn khác</button>
-          <a href="/pages/profile.html" class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-4 py-2 text-white">Xem lịch sử đặt bàn</a>
+        <div class="flex justify-center gap-4 pt-8">
+          <button id="btn-reset" class="rounded-md border border-white/10 bg-transparent px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-white/5">Đặt thêm bàn khác</button>
+          <a href="/pages/menu.html" class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow transition-colors hover:bg-primary/90">Đi gọi món</a>
         </div>
       </div>
     `;
   }
 
-  html += '</div>';
+  html += "</div>";
   container.innerHTML = html;
+  attachStepEvents();
+}
 
-  // Attach event listeners
+function attachStepEvents() {
   if (step === 1) {
-    const form = document.getElementById('search-form');
-    const submitBtn = document.getElementById('btn-search');
-    if (form) {
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        searchParams.date = document.getElementById('date-input').value;
-        searchParams.time = document.getElementById('time-input').value;
-        searchParams.guests = parseInt(document.getElementById('guests-input').value) || 1;
-        
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = 'Đang tìm kiếm...';
+    const form = document.getElementById("search-form");
+    const submitButton = document.getElementById("btn-search");
+    const errorBox = document.getElementById("reservation-search-error");
+    const dateInput = document.getElementById("date-input");
+    const timeInput = document.getElementById("time-input");
 
-        try {
-            const datetime = `${searchParams.date}T${searchParams.time}:00`;
-            const response = await fetch(`http://localhost:8080/api/tables/available?datetime=${datetime}&guests=${searchParams.guests}`);
-            
-            if (!response.ok) {
-                throw new Error("Không thể kết nối đến máy chủ");
-            }
-            
-            const result = await response.json();
-            
-            if(result.success && result.data) {
-                 availableTables = result.data.map(t => ({
-                    id: t.id,
-                    name: t.name,
-                    maxGuests: t.capacity,
-                    description: t.description
-                 }));
-            } else {
-                 availableTables = [];
-            }
-            step = 2;
-        } catch (error) {
-            console.error(error);
-            alert("Đã xảy ra lỗi khi tìm kiếm bàn: " + error.message);
-        } finally {
-            submitBtn.disabled = false;
-            renderReservationFlow();
+    // Update time input min when date changes
+    dateInput?.addEventListener("change", () => {
+      const selectedDate = dateInput.value;
+      const today = getMinDate();
+
+      if (selectedDate === today) {
+        // If today is selected, set minimum time to current time
+        const now = new Date();
+        const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
+        timeInput.min = currentTime;
+      } else {
+        // For future dates, remove min time restriction
+        timeInput.min = "00:00";
+      }
+    });
+
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const selectedDate = document.getElementById("date-input").value;
+      const selectedTime = document.getElementById("time-input").value;
+      searchParams.guests =
+        Number(document.getElementById("guests-input").value) || 1;
+
+      // Validate that booking time is not in the past
+      const today = getMinDate();
+      const now = new Date();
+      const currentTime = now.toTimeString().slice(0, 5);
+
+      if (selectedDate === today && selectedTime < currentTime) {
+        if (errorBox) {
+          errorBox.textContent = "Vui lòng chọn giờ đặt trong tương lai.";
+          errorBox.classList.remove("hidden");
         }
-      });
-    }
-  } else if (step === 2) {
-    const btnBack1 = document.getElementById('btn-back-step1');
-    const btnBack1Empty = document.getElementById('btn-back-step1-empty');
-    if (btnBack1) btnBack1.addEventListener('click', () => { step = 1; renderReservationFlow(); });
-    if (btnBack1Empty) btnBack1Empty.addEventListener('click', () => { step = 1; renderReservationFlow(); });
+        return;
+      }
 
-    document.querySelectorAll('.btn-select-table').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const id = parseInt(e.currentTarget.getAttribute('data-id'));
-        selectedTable = availableTables.find(t => t.id === id);
+      searchParams.date = selectedDate;
+      searchParams.time = selectedTime;
+
+      submitButton.disabled = true;
+      submitButton.textContent = "Đang tìm kiếm...";
+      errorBox?.classList.add("hidden");
+
+      try {
+        availableTables = await apiRequest(
+          `/tables/available?datetime=${encodeURIComponent(toApiDateTime(searchParams.date, searchParams.time))}&guests=${encodeURIComponent(searchParams.guests)}`,
+        );
+        step = 2;
+        renderReservationFlow();
+      } catch (error) {
+        if (errorBox) {
+          errorBox.textContent = error.message || "Không thể tìm bàn trống.";
+          errorBox.classList.remove("hidden");
+        }
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "Tìm bàn trống";
+      }
+    });
+  }
+
+  if (step === 2) {
+    document.getElementById("btn-back-step1")?.addEventListener("click", () => {
+      step = 1;
+      renderReservationFlow();
+    });
+
+    document
+      .getElementById("btn-back-step1-empty")
+      ?.addEventListener("click", () => {
+        step = 1;
+        renderReservationFlow();
+      });
+
+    document.querySelectorAll(".btn-select-table").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        const id = Number(event.currentTarget.getAttribute("data-id"));
+        selectedTable =
+          availableTables.find((table) => table.id === id) || null;
         step = 3;
         renderReservationFlow();
       });
     });
-  } else if (step === 3) {
-    const btnBack2 = document.getElementById('btn-back-step2');
-    const btnConfirm = document.getElementById('btn-confirm');
-    const errorBox = document.getElementById('booking-error');
+  }
 
-    if (btnBack2) btnBack2.addEventListener('click', () => { step = 2; renderReservationFlow(); });
-    
-    if (btnConfirm) btnConfirm.addEventListener('click', async () => { 
-        const contactName = document.getElementById('contact-name').value.trim();
-        const contactPhone = document.getElementById('contact-phone').value.trim();
-        const note = document.getElementById('booking-note').value;
-        
-        if(!contactName || !contactPhone) {
-             errorBox.innerText = "Vui lòng nhập tên người đặt và số điện thoại!";
-             errorBox.classList.remove('hidden');
-             return;
-        }
+  if (step === 3) {
+    const errorBox = document.getElementById("booking-error");
+    const confirmButton = document.getElementById("btn-confirm");
 
-        btnConfirm.disabled = true;
-        btnConfirm.innerText = "Đang xử lý...";
-        errorBox.classList.add('hidden');
-
-        const payload = {
-            contactPhone: contactPhone,
-            contactName: contactName,
-            bookingTime: `${searchParams.date}T${searchParams.time}:00`,
-            guestCount: searchParams.guests,
-            note: note || "Không có",
-            userId: user.id || null, // API handles guests as null user mostly, or maybe required?
-            tableIds: [selectedTable.id]
-        };
-
-        try {
-            const token = localStorage.getItem('token');
-            const headers = { 'Content-Type': 'application/json' };
-            if(token) headers['Authorization'] = 'Bearer ' + token;
-
-            const response = await fetch('http://localhost:8080/api/bookings', {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-
-            if(!response.ok) {
-                 throw new Error(data.message || "Không thể đặt bàn lúc này, vui lòng thử lại.");
-            }
-            
-            step = 4;
-            renderReservationFlow();
-        } catch(error) {
-            console.error(error);
-            errorBox.innerText = error.message;
-            errorBox.classList.remove('hidden');
-            btnConfirm.disabled = false;
-            btnConfirm.innerText = "Xác nhận đặt bàn";
-        }
+    document.getElementById("btn-back-step2")?.addEventListener("click", () => {
+      step = 2;
+      renderReservationFlow();
     });
-  } else if (step === 4) {
-    const btnReset = document.getElementById('btn-reset');
-    if (btnReset) btnReset.addEventListener('click', () => {
+
+    confirmButton?.addEventListener("click", async () => {
+      const user = getUser();
+      const payload = {
+        contactName: document.getElementById("contact-name").value.trim(),
+        contactPhone: document.getElementById("contact-phone").value.trim(),
+        bookingTime: toApiDateTime(searchParams.date, searchParams.time),
+        guestCount: searchParams.guests,
+        note:
+          document.getElementById("booking-note").value.trim() ||
+          "Khách đặt từ trang web",
+        status: "PENDING",
+        userId: user.id || null,
+        tableIds: [selectedTable.id],
+      };
+
+      if (!payload.contactName || !payload.contactPhone) {
+        if (errorBox) {
+          errorBox.textContent =
+            "Vui lòng nhập tên người đặt và số điện thoại.";
+          errorBox.classList.remove("hidden");
+        }
+        return;
+      }
+
+      confirmButton.disabled = true;
+      confirmButton.textContent = "Đang xử lý...";
+      errorBox?.classList.add("hidden");
+
+      try {
+        await apiRequest("/bookings", { method: "POST", body: payload });
+        step = 4;
+        renderReservationFlow();
+      } catch (error) {
+        if (errorBox) {
+          errorBox.textContent = error.message || "Không thể tạo booking.";
+          errorBox.classList.remove("hidden");
+        }
+        confirmButton.disabled = false;
+        confirmButton.textContent = "Xác nhận đặt bàn";
+      }
+    });
+  }
+
+  if (step === 4) {
+    document.getElementById("btn-reset")?.addEventListener("click", () => {
       step = 1;
-      searchParams = { date: '', time: '', guests: 2 };
+      searchParams = { date: "", time: "", guests: 2 };
+      availableTables = [];
       selectedTable = null;
       renderReservationFlow();
     });
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   renderNavbar();
   renderFooter();
   renderReservationFlow();

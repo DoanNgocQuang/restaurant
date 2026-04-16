@@ -1,78 +1,78 @@
-    <aside class="w-72 h-full bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl z-10 transition-all duration-300">
-      <div class="p-6 flex items-center gap-4">
-        <div class="bg-gradient-to-br from-rose-500 to-primary rounded-xl p-2.5 text-white shadow-lg shadow-rose-500/30">
-          <span class="material-symbols-outlined text-2xl">restaurant</span>
+<aside class="w-72 h-full bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl z-10 transition-all duration-300">
+  <div class="p-6 flex items-center gap-4">
+    <div class="bg-gradient-to-br from-rose-500 to-primary rounded-xl p-2.5 text-white shadow-lg shadow-rose-500/30">
+      <span class="material-symbols-outlined text-2xl">restaurant</span>
+    </div>
+    <div>
+      <h1 class="text-white font-black text-xl leading-tight tracking-wide">Gourmet<span class="text-rose-400">Admin</span></h1>
+      <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">Management Suite</p>
+    </div>
+  </div>
+  <nav class="flex-1 px-4 py-4 space-y-2 overflow-y-auto custom-scrollbar">
+    <a id="nav-dashboard" class="nav-item flex items-center gap-3 px-4 py-3.5 bg-gradient-to-r from-rose-600 to-primary text-white rounded-xl shadow-md shadow-rose-900/20 transition-all" href="#dashboard">
+      <span class="material-symbols-outlined">dashboard</span>
+      <span class="text-sm font-semibold">Tổng quan bảng điều khiển</span>
+    </a>
+
+    <div class="pt-6 pb-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Operations</div>
+
+    <a id="nav-dishes" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#dishes">
+      <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">restaurant_menu</span>
+      <span class="text-sm font-medium">Quản lý món ăn</span>
+    </a>
+    <a id="nav-customers" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#customers">
+      <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">group</span>
+      <span class="text-sm font-medium">Quản lý khách hàng</span>
+    </a>
+    <a id="nav-tables" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#tables">
+      <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">table_restaurant</span>
+      <span class="text-sm font-medium">Quản lý bàn</span>
+    </a>
+
+    <a id="nav-reservations" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#reservations">
+      <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">book_online</span>
+      <span class="text-sm font-medium">Quản lý đặt bàn</span>
+    </a>
+    <a id="nav-vouchers" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#vouchers">
+      <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">local_activity</span>
+      <span class="text-sm font-medium">Quản lý voucher</span>
+    </a>
+
+    <div class="pt-6 pb-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Hoạt động</div>
+
+    <div>
+      <button id="stats-menu-btn" class="flex items-center justify-between w-full px-4 py-3 bg-slate-800/40 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-all border border-slate-700/50 group">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined text-rose-400 group-hover:scale-110 transition-transform">analytics</span>
+          <span class="text-sm font-medium">Thống kê</span>
         </div>
-        <div>
-          <h1 class="text-white font-black text-xl leading-tight tracking-wide">Gourmet<span class="text-rose-400">Admin</span></h1>
-          <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">Management Suite</p>
-        </div>
+        <span id="stats-menu-icon" class="material-symbols-outlined text-sm transition-transform duration-300">expand_more</span>
+      </button>
+      <div id="stats-sub-menu" class="mt-2 ml-5 space-y-1 hidden border-l-2 border-slate-800 pl-2">
+        <a id="nav-stats-month" class="flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" href="#stats-month">
+          <span class="material-symbols-outlined text-[18px] text-blue-400">calendar_month</span>
+          Doanh thu theo tháng
+        </a>
+        <a id="nav-stats-dishes" class="flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" href="#stats-dishes">
+          <span class="material-symbols-outlined text-[18px] text-orange-400">local_fire_department</span>
+          Tổng quan thực đơn
+        </a>
+        <a id="nav-stats-hours" class="flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" href="#stats-hours">
+          <span class="material-symbols-outlined text-[18px] text-emerald-400">schedule</span>
+          Khách hàng theo giờ
+        </a>
       </div>
-      <nav class="flex-1 px-4 py-4 space-y-2 overflow-y-auto custom-scrollbar">
-        <a id="nav-dashboard" class="nav-item flex items-center gap-3 px-4 py-3.5 bg-gradient-to-r from-rose-600 to-primary text-white rounded-xl shadow-md shadow-rose-900/20 transition-all" href="#dashboard">
-          <span class="material-symbols-outlined">dashboard</span>
-          <span class="text-sm font-semibold">Tổng quan bảng điều khiển</span>
-        </a>
-        
-        <div class="pt-6 pb-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Operations</div>
-        
-        <a id="nav-dishes" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#dishes">
-          <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">restaurant_menu</span>
-          <span class="text-sm font-medium">Quản lý món ăn</span>
-        </a>
-        <a id="nav-customers" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#customers">
-          <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">group</span>
-          <span class="text-sm font-medium">Quản lý khách hàng</span>
-        </a>
-        <a id="nav-tables" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#tables">
-          <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">table_restaurant</span>
-          <span class="text-sm font-medium">Quản lý bàn</span>
-        </a>
-        
-        <a id="nav-reservations" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#reservations">
-          <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">book_online</span>
-          <span class="text-sm font-medium">Quản lý đặt bàn</span>
-        </a>
-        <a id="nav-vouchers" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#vouchers">
-          <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">local_activity</span>
-          <span class="text-sm font-medium">Quản lý voucher</span>
-        </a>
-        
-        <div class="pt-6 pb-2 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Hoạt động</div>
-        
-        <div>
-          <button id="stats-menu-btn" class="flex items-center justify-between w-full px-4 py-3 bg-slate-800/40 text-slate-300 hover:bg-slate-800 hover:text-white rounded-xl transition-all border border-slate-700/50 group">
-            <div class="flex items-center gap-3">
-              <span class="material-symbols-outlined text-rose-400 group-hover:scale-110 transition-transform">analytics</span>
-              <span class="text-sm font-medium">Thống kê</span>
-            </div>
-            <span id="stats-menu-icon" class="material-symbols-outlined text-sm transition-transform duration-300">expand_more</span>
-          </button>
-          <div id="stats-sub-menu" class="mt-2 ml-5 space-y-1 hidden border-l-2 border-slate-800 pl-2">
-            <a id="nav-stats-month" class="flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" href="#stats-month">
-              <span class="material-symbols-outlined text-[18px] text-blue-400">calendar_month</span>
-              Doanh thu theo tháng
-            </a>
-            <a id="nav-stats-dishes" class="flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" href="#stats-dishes">
-              <span class="material-symbols-outlined text-[18px] text-orange-400">local_fire_department</span>
-              Món ăn bán chạy
-            </a>
-            <a id="nav-stats-hours" class="flex items-center gap-3 px-4 py-2.5 text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" href="#stats-hours">
-              <span class="material-symbols-outlined text-[18px] text-emerald-400">schedule</span>
-              Khách hàng theo giờ
-            </a>
-          </div>
-        </div>
-        
-        <a id="nav-history" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#history">
-          <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">history</span>
-          <span class="text-sm font-medium">Lịch sử hệ thống</span>
-        </a>
-      </nav>
-      <div class="p-4 border-t border-slate-800 bg-slate-900/80">
-        <button class="flex items-center gap-3 w-full px-4 py-3 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl transition-all">
-          <span class="material-symbols-outlined">logout</span>
-          <span class="text-sm font-medium">Đăng xuất</span>
-        </button>
-      </div>
-    </aside>
+    </div>
+
+    <a id="nav-history" class="nav-item flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all group" href="#history">
+      <span class="material-symbols-outlined group-hover:text-rose-400 transition-colors">history</span>
+      <span class="text-sm font-medium">Lịch sử hệ thống</span>
+    </a>
+  </nav>
+  <div class="p-4 border-t border-slate-800 bg-slate-900/80">
+    <button id="admin-logout-btn" class="flex items-center gap-3 w-full px-4 py-3 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-xl transition-all">
+      <span class="material-symbols-outlined">logout</span>
+      <span class="text-sm font-medium">Đăng xuất</span>
+    </button>
+  </div>
+</aside>

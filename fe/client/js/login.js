@@ -1,5 +1,9 @@
 import { renderNavbar } from '../components/index.js';
 
+function resolvePageUrl(relativePath) {
+  return new URL(relativePath, window.location.href).href;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderNavbar();
 
@@ -27,9 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
           alert(data.message || 'Đăng nhập thành công!');
           
           if (data.data.user.role === 'ADMIN') {
-            window.location.href = '/admin/index.html';
+            window.location.href = resolvePageUrl('../admin/');
           } else {
-            window.location.href = '/pages/index.html';
+            window.location.href = resolvePageUrl('./index.html');
           }
         } else {
           alert(data.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin.');

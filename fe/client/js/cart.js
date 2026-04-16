@@ -2,11 +2,16 @@ import { renderNavbar, renderFooter } from '../components/index.js';
 
 const API = 'http://localhost:8080/api';
 
-/* ================= TOKEN ================= */
 const getToken = () => localStorage.getItem('token');
+const getUser = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user') || '{}');
+  } catch (error) {
+    return {};
+  }
+};
 
-/* ================= INIT ================= */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
   if (!isLoggedIn) {
     window.location.href = '/pages/login.html';
@@ -17,228 +22,217 @@ document.addEventListener('DOMContentLoaded', () => {
   renderFooter();
   renderCart();
 
-  const btn = document.getElementById('checkout-btn');
-  if (btn) btn.onclick = checkout;
+  const checkoutButton = document.getElementById('checkout-btn');
+  if (checkoutButton) {
+    checkoutButton.onclick = checkout;
+  }
 
-  checkBooking().then(b => {
-    if (!b && btn) {
-      btn.textContent = "Cần đặt bàn trước";
-      btn.disabled = true;
-      btn.classList.add("opacity-50", "cursor-not-allowed");
-    }
-  });
+  const booking = await findCurrentBooking();
+  updateCheckoutAvailability(booking);
 });
 
-/* ================= CART STORAGE ================= */
-
 function getCart() {
-  return JSON.parse(localStorage.getItem('cart')) || [];
+  return JSON.parse(localStorage.getItem('cart') || '[]');
 }
 
 function saveCart(cart) {
   localStorage.setItem('cart', JSON.stringify(cart));
 }
 
-/* ================= RENDER ================= */
+function formatCurrency(value) {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0
+  }).format(Number(value || 0));
+}
+
+async function apiRequest(path, options = {}) {
+  const response = await fetch(`${API}${path}`, {
+    method: options.method || 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      ...(options.headers || {})
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
+
+  const json = await response.json().catch(() => null);
+  if (!response.ok || json?.status === 'error') {
+    throw new Error(json?.message || `Yêu cầu thất bại (${response.status})`);
+  }
+
+  return json?.data;
+}
 
 function renderCart() {
   const container = document.getElementById('cart-items-container');
   const countEl = document.getElementById('cart-count');
   const summaryEl = document.getElementById('cart-summary');
+  const cartItems = getCart();
 
-  let cartItems = getCart();
   if (!container || !countEl || !summaryEl) return;
 
-  countEl.textContent = `Bạn đang có ${cartItems.length} món`;
+  countEl.textContent = `Bạn đang có ${cartItems.length} món trong giỏ hàng`;
 
-  /* ===== EMPTY CART ===== */
   if (cartItems.length === 0) {
     container.innerHTML = `
-      <div class="text-center py-20 text-slate-400">
-        <p class="text-xl mb-4">Giỏ hàng của bạn đang trống</p>
-        <a href="/pages/menu.html"
-          class="inline-block bg-primary text-black px-6 py-3 rounded-xl font-bold">
+      <div class="py-20 text-center text-slate-400">
+        <p class="mb-4 text-xl">Giỏ hàng của bạn đang trống</p>
+        <a href="/pages/menu.html" class="inline-block rounded-xl bg-primary px-6 py-3 font-bold text-black">
           Đi chọn món
         </a>
       </div>
     `;
-    summaryEl.innerHTML = "";
+    summaryEl.innerHTML = '';
     return;
   }
 
-  /* ===== ITEMS ===== */
-  container.innerHTML = cartItems.map(item => `
-    <div class="bg-white/5 backdrop-blur rounded-2xl p-6 border border-white/10 shadow-xl flex items-center gap-6 hover:bg-white/10 transition">
-
-      <!-- INFO -->
+  container.innerHTML = cartItems.map((item) => `
+    <div class="flex items-center gap-6 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl backdrop-blur transition hover:bg-white/10">
       <div class="flex-1">
         <h3 class="text-lg font-bold text-white">${item.name}</h3>
-        <p class="text-slate-400">$${item.price}</p>
+        <p class="text-slate-400">${formatCurrency(item.price)}</p>
       </div>
-
-      <!-- QUANTITY -->
-      <div class="flex items-center gap-3 bg-black/30 px-3 py-1 rounded-xl border border-white/10">
-        <button class="btn-minus text-lg px-2 text-slate-300 hover:text-white"
-          data-id="${item.itemId}" data-type="${item.type}">−</button>
-
-        <span class="text-white font-semibold min-w-[20px] text-center">
-          ${item.quantity}
-        </span>
-
-        <button class="btn-plus text-lg px-2 text-slate-300 hover:text-white"
-          data-id="${item.itemId}" data-type="${item.type}">+</button>
+      <div class="flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 px-3 py-1">
+        <button class="btn-minus px-2 text-lg text-slate-300 hover:text-white" data-id="${item.itemId}" data-type="${item.type}">−</button>
+        <span class="min-w-[20px] text-center font-semibold text-white">${item.quantity}</span>
+        <button class="btn-plus px-2 text-lg text-slate-300 hover:text-white" data-id="${item.itemId}" data-type="${item.type}">+</button>
       </div>
-
-      <!-- TOTAL -->
-      <div class="min-w-[120px] text-right">
-        <p class="text-white font-bold text-lg">
-          $${(item.price * item.quantity).toFixed(2)}
-        </p>
+      <div class="min-w-[140px] text-right">
+        <p class="text-lg font-bold text-white">${formatCurrency(item.price * item.quantity)}</p>
       </div>
-
-      <!-- REMOVE -->
-      <button class="btn-remove text-red-400 hover:text-red-300 text-lg"
-        data-id="${item.itemId}" data-type="${item.type}">
-        ✕
-      </button>
-
+      <button class="btn-remove text-lg text-red-400 hover:text-red-300" data-id="${item.itemId}" data-type="${item.type}">✕</button>
     </div>
   `).join('');
 
-  /* ===== SUMMARY ===== */
-  const subtotal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const tax = subtotal * 0.1;
   const total = subtotal + tax;
 
   summaryEl.innerHTML = `
     <div class="flex justify-between text-slate-300">
       <span>Tạm tính</span>
-      <span>$${subtotal.toFixed(2)}</span>
+      <span>${formatCurrency(subtotal)}</span>
     </div>
-
     <div class="flex justify-between text-slate-300">
       <span>Thuế (10%)</span>
-      <span>$${tax.toFixed(2)}</span>
+      <span>${formatCurrency(tax)}</span>
     </div>
-
-    <div class="flex justify-between text-white text-xl font-bold border-t border-white/10 pt-4">
+    <div class="flex justify-between border-t border-white/10 pt-4 text-xl font-bold text-white">
       <span>Tổng</span>
-      <span>$${total.toFixed(2)}</span>
+      <span>${formatCurrency(total)}</span>
     </div>
   `;
 
   attachEvents();
 }
 
-/* ================= EVENTS ================= */
-
 function attachEvents() {
   let cartItems = getCart();
 
-  document.querySelectorAll('.btn-minus').forEach(btn => {
-    btn.onclick = () => {
-      const item = cartItems.find(i =>
-        i.itemId == btn.dataset.id && i.type == btn.dataset.type
-      );
-      if (item && item.quantity > 1) item.quantity--;
+  document.querySelectorAll('.btn-minus').forEach((button) => {
+    button.onclick = () => {
+      const item = cartItems.find((cartItem) => cartItem.itemId == button.dataset.id && cartItem.type == button.dataset.type);
+      if (item && item.quantity > 1) {
+        item.quantity -= 1;
+      }
       saveCart(cartItems);
       renderCart();
     };
   });
 
-  document.querySelectorAll('.btn-plus').forEach(btn => {
-    btn.onclick = () => {
-      const item = cartItems.find(i =>
-        i.itemId == btn.dataset.id && i.type == btn.dataset.type
-      );
-      if (item) item.quantity++;
+  document.querySelectorAll('.btn-plus').forEach((button) => {
+    button.onclick = () => {
+      const item = cartItems.find((cartItem) => cartItem.itemId == button.dataset.id && cartItem.type == button.dataset.type);
+      if (item) {
+        item.quantity += 1;
+      }
       saveCart(cartItems);
       renderCart();
     };
   });
 
-  document.querySelectorAll('.btn-remove').forEach(btn => {
-    btn.onclick = () => {
-      cartItems = cartItems.filter(i =>
-        !(i.itemId == btn.dataset.id && i.type == btn.dataset.type)
-      );
+  document.querySelectorAll('.btn-remove').forEach((button) => {
+    button.onclick = () => {
+      cartItems = cartItems.filter((item) => !(item.itemId == button.dataset.id && item.type == button.dataset.type));
       saveCart(cartItems);
       renderCart();
     };
   });
 }
 
-/* ================= CHECK BOOKING ================= */
-
-async function checkBooking() {
+async function findCurrentBooking() {
   try {
-    const res = await fetch(`${API}/bookings/my-current`, {
-      headers: {
-        Authorization: `Bearer ${getToken()}`
-      }
-    });
-    
-    if (res.status === 401) {
-      window.location.href = '/pages/login.html';
-      return null;
+    const booking = await apiRequest('/bookings/my-current');
+    if (booking) {
+      return booking;
     }
+  } catch (error) {
+  }
 
-    if (!res.ok) return null;
-
-    const json = await res.json();
-    return json.data;
-  } catch {
+  try {
+    const user = getUser();
+    if (!user.id) return null;
+    const bookings = await apiRequest(`/bookings?userId=${encodeURIComponent(user.id)}`);
+    const bookingList = Array.isArray(bookings) ? bookings : [];
+    return bookingList
+      .filter((booking) => booking.status === 'PENDING')
+      .sort((first, second) => new Date(second.bookingTime) - new Date(first.bookingTime))[0] || null;
+  } catch (error) {
     return null;
   }
 }
 
-/* ================= CHECKOUT ================= */
+function updateCheckoutAvailability(booking) {
+  const button = document.getElementById('checkout-btn');
+  if (!button) return;
+
+  if (!booking) {
+    button.textContent = 'Cần đặt bàn trước';
+    button.disabled = true;
+    button.classList.add('opacity-50', 'cursor-not-allowed');
+    return;
+  }
+
+  button.disabled = false;
+  button.classList.remove('opacity-50', 'cursor-not-allowed');
+}
 
 async function checkout() {
   const cart = getCart();
 
   if (cart.length === 0) {
-    alert("Giỏ hàng trống");
+    alert('Giỏ hàng trống');
     return;
   }
 
-  const booking = await checkBooking();
-
+  const booking = await findCurrentBooking();
   if (!booking) {
-    alert("Bạn cần đặt bàn trước khi order!");
-    window.location.href = "/pages/reservations.html";
+    alert('Bạn cần đặt bàn trước khi gọi món.');
+    window.location.href = '/pages/reservations.html';
     return;
   }
 
   const payload = {
-    orderDetails: cart.map(i => ({
-      quantity: i.quantity,
-      foodId: i.type === "FOOD" ? i.itemId : null,
-      comboId: i.type === "COMBO" ? i.itemId : null
+    orderDetails: cart.map((item) => ({
+      quantity: item.quantity,
+      foodId: item.type === 'FOOD' ? item.itemId : null,
+      comboId: item.type === 'COMBO' ? item.itemId : null
     }))
   };
 
   try {
-    const res = await fetch(`${API}/orders`, {
+    await apiRequest('/orders', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${getToken()}`
-      },
-      body: JSON.stringify(payload)
+      body: payload
     });
 
-    const json = await res.json();
-
-    if (!res.ok) throw new Error(json.message);
-
-    alert("Đặt hàng thành công!");
-
+    alert('Gọi món thành công!');
     localStorage.removeItem('cart');
     renderCart();
-
-  } catch (err) {
-    console.error(err);
-    alert("Đặt hàng thất bại: " + err.message);
+  } catch (error) {
+    alert(`Gọi món thất bại: ${error.message}`);
   }
 }
