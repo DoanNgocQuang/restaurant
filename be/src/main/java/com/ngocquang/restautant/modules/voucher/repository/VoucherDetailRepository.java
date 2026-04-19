@@ -19,5 +19,6 @@ public interface VoucherDetailRepository extends JpaRepository<VoucherDetail, In
             """)
     long countDistinctUsedUsersByVoucherId(@Param("voucherId") Integer voucherId);
 
-    boolean existsByVoucherIdAndUserId(Integer voucherId, Integer userId);
+    @Query("SELECT COUNT(vd) > 0 FROM VoucherDetail vd WHERE vd.voucher.id = :voucherId AND vd.user.id = :userId")
+    boolean existsByVoucherIdAndUserId(@Param("voucherId") Integer voucherId, @Param("userId") Integer userId);
 }

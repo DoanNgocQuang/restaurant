@@ -17,6 +17,7 @@ import com.ngocquang.restautant.modules.voucher.entity.Voucher;
 import com.ngocquang.restautant.modules.voucher.entity.VoucherDetail;
 import com.ngocquang.restautant.modules.voucher.repository.VoucherDetailRepository;
 import com.ngocquang.restautant.modules.voucher.repository.VoucherRepository;
+import com.ngocquang.restautant.modules.voucher.service.VoucherService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,8 @@ public class CheckoutService {
     private final SystemLogService systemLogService;
     private final VoucherRepository voucherRepository;
     private final VoucherDetailRepository voucherDetailRepository;
+
+    private final VoucherService voucherService;
 
     @Transactional
     public OrderDto processCheckout(CheckoutRequestDto request) {
@@ -54,17 +57,9 @@ public class CheckoutService {
             Voucher voucher = voucherRepository.findByCode(request.getVoucherCode())
                     .orElseThrow(() -> new ResourceNotFoundException("Voucher not found"));
 
-            LocalDateTime now = LocalDateTime.now();
-            if (now.isBefore(voucher.getStartDate()) || now.isAfter(voucher.getEndDate())) {
-                throw new BadRequestException("Voucher is expired or not yet active");
-            }
-            if (voucher.getQuantity() <= 0) {
-                throw new BadRequestException("Voucher is out of stock");
-            }
-            if (voucherDetailRepository.existsByVoucherIdAndUserId(voucher.getId(), user.getId())) {
-                throw new BadRequestException("You have already used this voucher");
-            }
+            voucherService.validateVoucherEligibility(voucher, user);
 
+            LocalDateTime now = LocalDateTime.now();
             BigDecimal discountAmt = BigDecimal.ZERO;
             if (voucher.getDiscountType() == Voucher.DiscountType.PERCENT) {
                 discountAmt = order.getTotal_amount().multiply(voucher.getDiscountValue()).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
