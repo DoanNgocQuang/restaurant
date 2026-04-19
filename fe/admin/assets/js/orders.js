@@ -5,6 +5,9 @@ const ordersState = {
   combos: [],
   tables: [],
   query: '',
+  statusFilter: '',
+  dateSort: 'desc',
+  totalSort: '',
   page: 1,
   pageSize: 10,
   formItems: []
@@ -12,6 +15,9 @@ const ordersState = {
 
 async function initOrders() {
   ordersState.query = '';
+  ordersState.statusFilter = '';
+  ordersState.dateSort = 'desc';
+  ordersState.totalSort = '';
   ordersState.page = 1;
   ordersState.formItems = [];
 
@@ -33,6 +39,39 @@ function bindOrderEvents() {
   if (addButton && !addButton.dataset.bound) {
     addButton.dataset.bound = 'true';
     addButton.addEventListener('click', () => openOrderModal());
+  }
+
+  const statusFilter = document.getElementById('orders-status-filter');
+  if (statusFilter && !statusFilter.dataset.bound) {
+    statusFilter.dataset.bound = 'true';
+    statusFilter.value = ordersState.statusFilter;
+    statusFilter.addEventListener('change', (event) => {
+      ordersState.statusFilter = event.target.value;
+      ordersState.page = 1;
+      renderOrdersList();
+    });
+  }
+
+  const dateSort = document.getElementById('orders-date-sort');
+  if (dateSort && !dateSort.dataset.bound) {
+    dateSort.dataset.bound = 'true';
+    dateSort.value = ordersState.dateSort;
+    dateSort.addEventListener('change', (event) => {
+      ordersState.dateSort = event.target.value;
+      ordersState.page = 1;
+      renderOrdersList();
+    });
+  }
+
+  const totalSort = document.getElementById('orders-total-sort');
+  if (totalSort && !totalSort.dataset.bound) {
+    totalSort.dataset.bound = 'true';
+    totalSort.value = ordersState.totalSort;
+    totalSort.addEventListener('change', (event) => {
+      ordersState.totalSort = event.target.value;
+      ordersState.page = 1;
+      renderOrdersList();
+    });
   }
 }
 
@@ -90,7 +129,7 @@ function getOrderItemsSummary(order) {
 }
 
 function getFilteredOrders() {
-  return ordersState.orders.filter((order) => {
+  const filtered = ordersState.orders.filter((order) => {
     const haystack = [
       order.id,
       order.userName,
@@ -101,8 +140,32 @@ function getFilteredOrders() {
       getOrderItemsSummary(order)
     ].join(' ').toLowerCase();
 
-    return !ordersState.query || haystack.includes(ordersState.query);
+    const matchesQuery = !ordersState.query || haystack.includes(ordersState.query);
+    const matchesStatus = !ordersState.statusFilter || order.status === ordersState.statusFilter;
+
+    return matchesQuery && matchesStatus;
   });
+
+  const sorted = [...filtered];
+  const getTimestamp = (order) => new Date(order.createdAt || 0).getTime() || 0;
+  const getTotal = (order) => Number(order.totalAmount || 0);
+
+  if (ordersState.totalSort) {
+    sorted.sort((left, right) => (
+      ordersState.totalSort === 'asc'
+        ? getTotal(left) - getTotal(right)
+        : getTotal(right) - getTotal(left)
+    ));
+    return sorted;
+  }
+
+  sorted.sort((left, right) => (
+    ordersState.dateSort === 'asc'
+      ? getTimestamp(left) - getTimestamp(right)
+      : getTimestamp(right) - getTimestamp(left)
+  ));
+
+  return sorted;
 }
 
 function getBookingById(bookingId) {
