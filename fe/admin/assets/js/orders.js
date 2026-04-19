@@ -6,6 +6,7 @@ const ordersState = {
   tables: [],
   query: '',
   statusFilter: '',
+  tableFilter: '',
   dateSort: 'desc',
   totalSort: '',
   page: 1,
@@ -16,6 +17,7 @@ const ordersState = {
 async function initOrders() {
   ordersState.query = '';
   ordersState.statusFilter = '';
+  ordersState.tableFilter = '';
   ordersState.dateSort = 'desc';
   ordersState.totalSort = '';
   ordersState.page = 1;
@@ -47,6 +49,17 @@ function bindOrderEvents() {
     statusFilter.value = ordersState.statusFilter;
     statusFilter.addEventListener('change', (event) => {
       ordersState.statusFilter = event.target.value;
+      ordersState.page = 1;
+      renderOrdersList();
+    });
+  }
+
+  const tableFilter = document.getElementById('orders-table-filter');
+  if (tableFilter && !tableFilter.dataset.bound) {
+    tableFilter.dataset.bound = 'true';
+    tableFilter.value = ordersState.tableFilter;
+    tableFilter.addEventListener('change', (event) => {
+      ordersState.tableFilter = event.target.value;
       ordersState.page = 1;
       renderOrdersList();
     });
@@ -96,6 +109,7 @@ async function loadOrdersData() {
     ordersState.combos = Array.isArray(combos) ? combos : [];
     ordersState.tables = Array.isArray(tables) ? tables : [];
 
+    renderOrderTableFilter();
     renderOrdersStats();
     renderOrdersList();
   } catch (error) {
@@ -109,6 +123,22 @@ async function loadOrdersData() {
       pagination.innerHTML = '';
     }
   }
+}
+
+function renderOrderTableFilter() {
+  const tableFilter = document.getElementById('orders-table-filter');
+  if (!tableFilter) {
+    return;
+  }
+
+  tableFilter.innerHTML = `
+    <option value="">Tất cả bàn</option>
+    ${ordersState.tables.map((table) => `
+      <option value="${table.id}" ${String(table.id) === ordersState.tableFilter ? 'selected' : ''}>
+        ${window.AdminApp.escapeHtml(table.name || `Bàn #${table.id}`)}
+      </option>
+    `).join('')}
+  `;
 }
 
 function renderOrdersStats() {
@@ -130,11 +160,15 @@ function getOrderItemsSummary(order) {
 
 function getFilteredOrders() {
   const filtered = ordersState.orders.filter((order) => {
+    const booking = getBookingById(order.bookingId);
+    const bookingTables = getBookingTablesLabel(getBookingById(order.bookingId));
+    const matchesTable = !ordersState.tableFilter || (booking?.tables || []).some((table) => String(table.id) === ordersState.tableFilter);
     const haystack = [
       order.id,
       order.userName,
       order.userEmail,
       order.tablesName,
+      bookingTables,
       order.status,
       order.bookingId,
       getOrderItemsSummary(order)
@@ -143,7 +177,7 @@ function getFilteredOrders() {
     const matchesQuery = !ordersState.query || haystack.includes(ordersState.query);
     const matchesStatus = !ordersState.statusFilter || order.status === ordersState.statusFilter;
 
-    return matchesQuery && matchesStatus;
+    return matchesQuery && matchesStatus && matchesTable;
   });
 
   const sorted = [...filtered];
@@ -487,7 +521,12 @@ function openOrderModal(orderId = null) {
     </button>
   `;
 
-  openGlobalModal(order ? `Cập nhật đơn #${order.id}` : 'Tạo đơn hàng mới', content, footer);
+  openGlobalModal(
+    order ? `Cập nhật đơn #${order.id}` : 'Tạo đơn hàng mới',
+    content,
+    footer,
+    'max-w-5xl mx-4'
+  );
   renderOrderItemsForm();
   renderOrderDraftSummary();
 }
