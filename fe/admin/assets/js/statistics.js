@@ -143,7 +143,7 @@ async function renderStatsDishes() {
     const items = Array.isArray(foods) ? foods : [];
 
     if (items.length === 0) {
-      tbody.innerHTML = window.AdminApp.renderTableMessage(3, 'Chưa có món ăn nào được bán trong tháng này.');
+      tbody.innerHTML = window.AdminApp.renderTableMessage(4, 'Chưa có món ăn nào được bán trong tháng này.');
       renderDishesChart([]);
       return;
     }
@@ -159,13 +159,14 @@ async function renderStatsDishes() {
             <td class="px-5 py-4 whitespace-nowrap">${rankHtml}</td>
             <td class="px-5 py-4 text-sm font-bold text-slate-900 dark:text-white capitalize">${window.AdminApp.escapeHtml(item.foodName)}</td>
             <td class="px-5 py-4 whitespace-nowrap text-sm text-emerald-600 font-black text-right">${window.AdminApp.formatNumber(item.totalSold)}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-primary font-bold text-right">${window.AdminApp.formatCurrency(item.totalRevenue)}</td>
           </tr>
         `;
     }).join('');
 
     renderDishesChart(items);
   } catch (error) {
-    tbody.innerHTML = window.AdminApp.renderTableMessage(3, error.message || 'Không thể tải thống kê món ăn bán chạy.', 'error');
+    tbody.innerHTML = window.AdminApp.renderTableMessage(4, error.message || 'Không thể tải thống kê món ăn bán chạy.', 'error');
   }
 }
 

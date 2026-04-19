@@ -7,4 +7,5 @@ public interface TopSellingFoodProjection {
     String getFoodName();
     BigDecimal getPrice();
     Long getTotalSold();
+    BigDecimal getTotalRevenue();
 }
