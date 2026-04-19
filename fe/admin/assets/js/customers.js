@@ -1,13 +1,17 @@
 const customersState = {
   users: [],
-  query: ''
+  query: '',
+  page: 1,
+  pageSize: 10
 };
 
 async function initCustomers() {
+  customersState.page = 1;
   window.AdminApp.configureGlobalSearch({
     placeholder: 'Tìm theo tên, email, số điện thoại...',
     handler: (value) => {
       customersState.query = value.toLowerCase();
+      customersState.page = 1;
       renderCustomers();
     }
   });
@@ -55,15 +59,31 @@ function renderCustomersStats() {
 
 function renderCustomers() {
   const tbody = document.getElementById('customers-tbody');
+  const pagination = document.getElementById('customers-pagination');
   if (!tbody) return;
 
   const users = getFilteredUsers();
   if (users.length === 0) {
     tbody.innerHTML = window.AdminApp.renderTableMessage(7, 'Không có người dùng phù hợp.');
+    if (pagination) {
+      pagination.innerHTML = '';
+    }
     return;
   }
 
-  tbody.innerHTML = users.map((user) => `
+  const paginationMeta = window.AdminPagination.render({
+    containerId: 'customers-pagination',
+    items: users,
+    currentPage: customersState.page,
+    pageSize: customersState.pageSize,
+    onPageChange: (page) => {
+      customersState.page = page;
+      renderCustomers();
+    }
+  });
+  customersState.page = paginationMeta.page;
+
+  tbody.innerHTML = paginationMeta.items.map((user) => `
     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
       <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">${window.AdminApp.escapeHtml(user.fullname || '--')}</td>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.escapeHtml(user.email || '--')}</td>

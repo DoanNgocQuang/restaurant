@@ -19,4 +19,5 @@ public class OrderDetailDto {
     private Integer orderId;
     private Integer foodId;
     private Integer comboId;
+    private String itemName;
 }

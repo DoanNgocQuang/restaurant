@@ -42,6 +42,12 @@ public class VoucherController {
                 .ok(ApiResponse.success(this.voucherService.getVoucherById(id), "Fetched voucher successfully"));
     }
 
+    @GetMapping("/code/{code}")
+    public ResponseEntity<ApiResponse<VoucherResponse>> getVoucherByCode(@PathVariable String code) {
+        return ResponseEntity
+                .ok(ApiResponse.success(this.voucherService.validateVoucherByCode(code), "Valid voucher"));
+    }
+
     @PostMapping
     public ResponseEntity<ApiResponse<VoucherResponse>> createVoucher(@Valid @RequestBody VoucherRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)

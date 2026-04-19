@@ -5,8 +5,8 @@ async function initDashboard() {
     const dateRange = getDashboardRange();
     const query = `/statistics/revenue/monthly?start=${encodeURIComponent(dateRange.start)}&end=${encodeURIComponent(dateRange.end)}`;
 
-    const [foods, users, tables, bookings, logs, revenues] = await Promise.all([
-      window.AdminApp.request('/foods'),
+    const [topFoods, users, tables, bookings, logs, revenues] = await Promise.all([
+      window.AdminApp.request('/orders/top-foods'),
       window.AdminApp.request('/users'),
       window.AdminApp.request('/tables'),
       window.AdminApp.request('/bookings'),
@@ -15,7 +15,7 @@ async function initDashboard() {
     ]);
 
     renderDashboardSummary({
-      foods: Array.isArray(foods) ? foods : [],
+      topFoods: Array.isArray(topFoods) ? topFoods : [],
       users: Array.isArray(users) ? users : [],
       tables: Array.isArray(tables) ? tables : [],
       bookings: Array.isArray(bookings) ? bookings : [],
@@ -42,7 +42,7 @@ function getDashboardRange() {
   };
 }
 
-function renderDashboardSummary({ foods, users, tables, bookings, logs, revenues }) {
+function renderDashboardSummary({ topFoods, users, tables, bookings, logs, revenues }) {
   const totalRevenue = revenues.reduce((sum, item) => sum + Number(item.totalRevenue || 0), 0);
   const activeUsers = users.filter((user) => user.isActive).length;
   const activeBookings = bookings.filter((booking) => ['PENDING', 'CONFIRMED'].includes(booking.status)).length;
@@ -53,7 +53,7 @@ function renderDashboardSummary({ foods, users, tables, bookings, logs, revenues
   document.getElementById('dashboard-bookings').textContent = window.AdminApp.formatNumber(activeBookings);
   document.getElementById('dashboard-tables').textContent = window.AdminApp.formatNumber(availableTables);
 
-  renderDashboardMenuSummary(foods);
+  renderDashboardMenuSummary(topFoods);
   renderDashboardHistory(logs);
   renderDashboardRevenueChart(revenues);
 }
@@ -63,40 +63,29 @@ function renderDashboardMenuSummary(foods) {
   if (!container) return;
 
   if (foods.length === 0) {
-    container.innerHTML = '<p class="text-sm text-slate-500">Chưa có món ăn để thống kê.</p>';
+    container.innerHTML = '<p class="text-sm text-slate-500">Chưa có món ăn nào được bán.</p>';
     return;
   }
 
-  const grouped = foods.reduce((accumulator, food) => {
-    const categoryName = food.category?.name || 'Chưa phân loại';
-    if (!accumulator[categoryName]) {
-      accumulator[categoryName] = {
-        total: 0,
-        available: 0,
-        averagePrice: 0,
-        sumPrice: 0
-      };
-    }
+  const top5 = foods.slice(0, 5);
 
-    accumulator[categoryName].total += 1;
-    accumulator[categoryName].sumPrice += Number(food.price || 0);
-    if (food.status === 'AVAILABLE') {
-      accumulator[categoryName].available += 1;
-    }
-
-    return accumulator;
-  }, {});
-
-  container.innerHTML = Object.entries(grouped).map(([name, item]) => {
-    const averagePrice = item.total > 0 ? item.sumPrice / item.total : 0;
+  container.innerHTML = top5.map((food, index) => {
+    let rankColor = 'bg-slate-200 text-slate-500';
+    if(index === 0) rankColor = 'bg-yellow-200 text-yellow-700';
+    if(index === 1) rankColor = 'bg-slate-300 text-slate-700';
+    if(index === 2) rankColor = 'bg-orange-200 text-orange-800';
+    
     return `
       <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 dark:border-slate-700 dark:bg-slate-900/50">
         <div class="flex items-start justify-between gap-3">
-          <div>
-            <h5 class="font-bold text-slate-900 dark:text-white">${window.AdminApp.escapeHtml(name)}</h5>
-            <p class="mt-1 text-sm text-slate-500">${item.available}/${item.total} món đang phục vụ</p>
+          <div class="flex items-center gap-3">
+             <div class="w-8 h-8 rounded-lg flex items-center justify-center font-black ${rankColor} shrink-0">#${index + 1}</div>
+             <div>
+               <h5 class="font-bold text-slate-900 dark:text-white capitalize">${window.AdminApp.escapeHtml(food.foodName)}</h5>
+               <p class="mt-1 text-xs text-slate-500 font-bold uppercase tracking-wide">Đã bán: ${food.totalSold}</p>
+             </div>
           </div>
-          <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">${window.AdminApp.formatCurrency(averagePrice)}</span>
+          <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary whitespace-nowrap">${window.AdminApp.formatCurrency(food.price)}</span>
         </div>
       </div>
     `;

@@ -98,6 +98,22 @@ public class VoucherService {
         return toResponse(voucherRepository.save(voucherInDb));
     }
 
+    public VoucherResponse validateVoucherByCode(String code) {
+        Voucher voucher = voucherRepository.findByCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Voucher not found with code: " + code));
+
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(voucher.getStartDate()) || now.isAfter(voucher.getEndDate())) {
+            throw new BadRequestException("Voucher is expired or not yet active");
+        }
+
+        if (voucher.getQuantity() <= 0) {
+            throw new BadRequestException("Voucher is out of stock");
+        }
+
+        return toResponse(voucher);
+    }
+
     public void deleteVoucherById(Integer id) {
         Voucher voucher = voucherRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Voucher not found with id: " + id));

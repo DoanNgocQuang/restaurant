@@ -224,14 +224,14 @@ async function checkout() {
   };
 
   try {
-    await apiRequest('/orders', {
+    const createdOrder = await apiRequest('/orders', {
       method: 'POST',
       body: payload
     });
 
-    alert('Gọi món thành công!');
-    localStorage.removeItem('cart');
-    renderCart();
+    // Redirect to checkout page with order details
+    // Do NOT clear cart yet, wait until payment is successful
+    window.location.href = `/pages/checkout.html?orderId=${createdOrder.id}`;
   } catch (error) {
     alert(`Gọi món thất bại: ${error.message}`);
   }

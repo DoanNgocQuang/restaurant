@@ -74,8 +74,7 @@ function getBookingStatusBadge(status) {
 function getOrderStatusBadge(status) {
   const statuses = {
     PENDING: { label: "Chờ xác nhận", class: "bg-yellow-100 text-yellow-600" },
-    CONFIRMED: { label: "Đã xác nhận", class: "bg-blue-100 text-blue-600" },
-    COMPLETED: { label: "Hoàn thành", class: "bg-green-100 text-green-600" },
+    CONFIRMED: { label: "Đã xác nhận", class: "bg-green-100 text-green-600" },
     CANCELLED: { label: "Đã hủy", class: "bg-red-100 text-red-600" },
   };
   return (

@@ -23,6 +23,9 @@ public class OrderDto {
     private OrderStatus status;
     private Integer bookingId;
     private Integer userId;
+    private String userName;
+    private String userEmail;
+    private String tablesName;
 
     private List<OrderDetailDto> orderDetails;
 }

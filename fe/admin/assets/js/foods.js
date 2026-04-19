@@ -2,18 +2,22 @@ const foodsState = {
   foods: [],
   categories: [],
   query: '',
-  categoryFilter: ''
+  categoryFilter: '',
+  page: 1,
+  pageSize: 10
 };
 
 async function initFoods() {
   foodsState.query = '';
   foodsState.categoryFilter = '';
+  foodsState.page = 1;
   bindFoodsEvents();
   window.AdminApp.configureGlobalSearch({
     placeholder: 'Tìm món ăn, mô tả hoặc danh mục...',
     value: '',
     handler: (value) => {
       foodsState.query = value.toLowerCase();
+      foodsState.page = 1;
       renderFoodsTable();
     }
   });
@@ -35,6 +39,7 @@ function bindFoodsEvents() {
   if (categoryFilter) {
     categoryFilter.addEventListener('change', (event) => {
       foodsState.categoryFilter = event.target.value;
+      foodsState.page = 1;
       renderFoodsTable();
     });
   }
@@ -118,15 +123,31 @@ function getFilteredFoods() {
 
 function renderFoodsTable() {
   const tbody = document.getElementById('dishes-tbody');
+  const pagination = document.getElementById('dishes-pagination');
   if (!tbody) return;
 
   const foods = getFilteredFoods();
   if (foods.length === 0) {
     tbody.innerHTML = window.AdminApp.renderTableMessage(7, 'Không có món ăn phù hợp với bộ lọc.');
+    if (pagination) {
+      pagination.innerHTML = '';
+    }
     return;
   }
 
-  tbody.innerHTML = foods.map((food) => {
+  const paginationMeta = window.AdminPagination.render({
+    containerId: 'dishes-pagination',
+    items: foods,
+    currentPage: foodsState.page,
+    pageSize: foodsState.pageSize,
+    onPageChange: (page) => {
+      foodsState.page = page;
+      renderFoodsTable();
+    }
+  });
+  foodsState.page = paginationMeta.page;
+
+  tbody.innerHTML = paginationMeta.items.map((food) => {
     const statusMap = {
       AVAILABLE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
       UNAVAILABLE: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
@@ -236,6 +257,7 @@ async function saveFoodForm(foodId) {
       await window.AdminApp.request('/foods', { method: 'POST', body: payload });
       foodsState.query = '';
       foodsState.categoryFilter = '';
+      foodsState.page = 1;
       window.AdminApp.configureGlobalSearch({
         placeholder: 'Tìm món ăn, mô tả hoặc danh mục...',
         value: '',
