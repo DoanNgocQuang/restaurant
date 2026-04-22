@@ -19,6 +19,7 @@ public class OrderDto {
 
     private Integer id;
     private LocalDateTime createdAt;
+    private LocalDateTime bookingTime;
     private BigDecimal totalAmount;
     private OrderStatus status;
     private Integer bookingId;
