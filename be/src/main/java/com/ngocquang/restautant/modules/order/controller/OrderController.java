@@ -52,6 +52,35 @@ public class OrderController {
         );
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<OrderDto>>> getAllOrders() {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        orderService.getAllOrders(),
+                        "Fetched all orders successfully"
+                )
+        );
+    }
+
+    @GetMapping("/top-foods")
+    public ResponseEntity<ApiResponse<List<com.ngocquang.restautant.modules.order.dto.TopSellingFoodProjection>>> getTopSellingFoods(
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year
+    ) {
+        if (month == null || year == null) {
+            java.time.LocalDate now = java.time.LocalDate.now();
+            month = month == null ? now.getMonthValue() : month;
+            year = year == null ? now.getYear() : year;
+        }
+
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        orderService.getTopSellingFoods(month, year),
+                        "Fetched top selling foods successfully"
+                )
+        );
+    }
+
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<OrderDto>> updateStatus(
             @PathVariable Integer id,
@@ -61,6 +90,42 @@ public class OrderController {
                 ApiResponse.success(
                         orderService.updateStatus(id, status),
                         "Updated order status successfully"
+                )
+        );
+    }
+
+    @PostMapping("/admin")
+    public ResponseEntity<ApiResponse<OrderDto>> createOrderForAdmin(
+            @Valid @RequestBody com.ngocquang.restautant.modules.order.dto.AdminOrderRequestDto request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(
+                        orderService.createOrderForAdmin(request),
+                        "Admin created order successfully",
+                        HttpStatus.CREATED.value()
+                ));
+    }
+
+    @PutMapping("/admin/{id}")
+    public ResponseEntity<ApiResponse<OrderDto>> updateOrderForAdmin(
+            @PathVariable Integer id,
+            @Valid @RequestBody com.ngocquang.restautant.modules.order.dto.AdminOrderRequestDto request
+    ) {
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        orderService.updateOrderForAdmin(id, request),
+                        "Admin updated order successfully"
+                )
+        );
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Object>> deleteOrder(@PathVariable Integer id) {
+        orderService.deleteOrder(id);
+        return ResponseEntity.ok(
+                ApiResponse.success(
+                        null,
+                        "Admin deleted order successfully"
                 )
         );
     }

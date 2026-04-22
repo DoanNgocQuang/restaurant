@@ -25,16 +25,54 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     Optional<Order> findFirstByUserAndStatus(User user, OrderStatus status);
 
     @Query("""
-        SELECT o FROM Order o 
-        LEFT JOIN FETCH o.orderDetails 
+        SELECT DISTINCT o FROM Order o
+        LEFT JOIN FETCH o.user
+        LEFT JOIN FETCH o.booking b
+        LEFT JOIN FETCH o.orderDetails od
+        LEFT JOIN FETCH od.food
+        LEFT JOIN FETCH od.combo
         WHERE o.id = :id
     """)
     Optional<Order> findByIdWithDetails(Integer id);
 
     @Query("""
-        SELECT o FROM Order o
-        LEFT JOIN FETCH o.orderDetails
+        SELECT DISTINCT o FROM Order o
+        LEFT JOIN FETCH o.user
+        LEFT JOIN FETCH o.booking b
+        LEFT JOIN FETCH o.orderDetails od
+        LEFT JOIN FETCH od.food
+        LEFT JOIN FETCH od.combo
         WHERE o.user = :user
+        ORDER BY o.created_at DESC
     """)
     List<Order> findByUserWithDetails(User user);
+
+    @Query("""
+        SELECT DISTINCT o FROM Order o
+        LEFT JOIN FETCH o.user
+        LEFT JOIN FETCH o.booking b
+        LEFT JOIN FETCH o.orderDetails od
+        LEFT JOIN FETCH od.food
+        LEFT JOIN FETCH od.combo
+        ORDER BY o.created_at DESC
+    """)
+    List<Order> findAllWithDetails();
+
+    @Query(value = """
+        SELECT f.id as foodId,
+               f.name as foodName,
+               f.price as price,
+               SUM(od.quantity) as totalSold,
+               SUM(od.quantity * od.price) as totalRevenue
+        FROM order_detail od
+        JOIN food f ON od.food_id = f.id
+        JOIN orders o ON od.order_id = o.id
+        WHERE o.status = 'CONFIRMED'
+        AND YEAR(o.created_at) = :year
+        AND MONTH(o.created_at) = :month
+        GROUP BY f.id, f.name, f.price
+        ORDER BY totalSold DESC, totalRevenue DESC
+        LIMIT 50
+    """, nativeQuery = true)
+    List<com.ngocquang.restautant.modules.order.dto.TopSellingFoodProjection> findTopSellingFoods(@org.springframework.data.repository.query.Param("month") Integer month, @org.springframework.data.repository.query.Param("year") Integer year);
 }

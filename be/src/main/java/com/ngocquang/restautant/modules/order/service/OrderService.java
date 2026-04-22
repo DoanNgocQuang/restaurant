@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -57,6 +58,68 @@ public class OrderService {
         return getOrderWithDetails(order.getId());
     }
 
+    @Transactional
+    public OrderDto createOrderForAdmin(AdminOrderRequestDto request) {
+        User admin = currentUserUtil.getCurrentUser();
+        Booking booking = resolveAdminBooking(request.getBookingId());
+        
+        User owner = booking.getUser();
+        Order order = initOrder(owner, booking);
+
+        BigDecimal total = buildOrderDetails(order, request.getOrderDetails());
+        order.setTotal_amount(total);
+        order = orderRepository.save(order);
+
+        systemLogService.log(
+                SystemAction.CREATE,
+                "Admin tạo order #" + order.getId() + " cho booking #" + booking.getId() + " | Tổng tiền: " + total,
+                admin
+        );
+
+        return getOrderWithDetails(order.getId());
+    }
+
+    @Transactional
+    public OrderDto updateOrderForAdmin(Integer id, AdminOrderRequestDto request) {
+        User admin = currentUserUtil.getCurrentUser();
+        Order order = findOrderWithDetails(id);
+
+        Booking booking = resolveAdminBooking(request.getBookingId());
+
+        order.setBooking(booking);
+        order.setUser(booking.getUser());
+
+        order.getOrderDetails().clear();
+        BigDecimal total = buildOrderDetails(order, request.getOrderDetails());
+        order.setTotal_amount(total);
+
+        order = orderRepository.save(order);
+
+        systemLogService.log(
+                SystemAction.UPDATE,
+                "Admin cập nhật order #" + order.getId() + " | Booking mới: #" + booking.getId() + " | Tổng tiền: " + total,
+                admin
+        );
+
+        return getOrderWithDetails(order.getId());
+    }
+
+    @Transactional
+    public void deleteOrder(Integer id) {
+        User admin = currentUserUtil.getCurrentUser();
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        orderRepository.delete(order);
+
+        systemLogService.log(
+                SystemAction.DELETE,
+                "Admin xoá order #" + id,
+                admin
+        );
+    }
+
+    @Transactional(readOnly = true)
     public OrderDto getOrderById(Integer id) {
 
         Order order = findOrderWithDetails(id);
@@ -64,6 +127,7 @@ public class OrderService {
         return mapToDto(order);
     }
 
+    @Transactional(readOnly = true)
     public List<OrderDto> getOrdersByUser() {
 
         User user = currentUserUtil.getCurrentUser();
@@ -74,11 +138,23 @@ public class OrderService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<OrderDto> getAllOrders() {
+        return orderRepository.findAllWithDetails()
+                .stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    public List<TopSellingFoodProjection> getTopSellingFoods(Integer month, Integer year) {
+        return orderRepository.findTopSellingFoods(month, year);
+    }
+
     private Order initOrder(User user, Booking booking) {
         return Order.builder()
                 .user(user)
                 .booking(booking)
-                .status(OrderStatus.CONFIRMED)
+                .status(OrderStatus.PENDING)
                 .total_amount(BigDecimal.ZERO)
                 .build();
     }
@@ -149,6 +225,17 @@ public class OrderService {
                 .orElseThrow(() -> new BadRequestException("Bạn chưa có booking hợp lệ"));
     }
 
+    private Booking resolveAdminBooking(Integer bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (booking.getStatus() == Booking.Status.CANCELLED) {
+            throw new BadRequestException("Không thể tạo đơn cho booking đã hủy");
+        }
+
+        return booking;
+    }
+
     private Order findOrderWithDetails(Integer id) {
         return orderRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
@@ -186,10 +273,20 @@ public class OrderService {
                 .map(this::mapDetail)
                 .toList();
 
+        String tablesName = null;
+        if (order.getBooking() != null && order.getBooking().getTables() != null) {
+            tablesName = order.getBooking().getTables().stream()
+                    .map(com.ngocquang.restautant.modules.table.entity.resTable::getName)
+                    .collect(Collectors.joining(", "));
+        }
+
         return OrderDto.builder()
                 .id(order.getId())
-                .userId(order.getUser().getId())
-                .bookingId(order.getBooking().getId())
+                .userId(order.getUser() != null ? order.getUser().getId() : null)
+                .userName(order.getUser() != null ? order.getUser().getFullname() : null)
+                .userEmail(order.getUser() != null ? order.getUser().getEmail() : null)
+                .bookingId(order.getBooking() != null ? order.getBooking().getId() : null)
+                .tablesName(tablesName)
                 .status(order.getStatus())
                 .createdAt(order.getCreated_at())
                 .totalAmount(order.getTotal_amount())
@@ -203,6 +300,7 @@ public class OrderService {
                 .orderId(d.getOrder().getId())
                 .foodId(d.getFood() != null ? d.getFood().getId() : null)
                 .comboId(d.getCombo() != null ? d.getCombo().getId() : null)
+                .itemName(d.getFood() != null ? d.getFood().getName() : (d.getCombo() != null ? d.getCombo().getName() : "Unknown"))
                 .price(d.getPrice())
                 .quantity(d.getQuantity())
                 .build();

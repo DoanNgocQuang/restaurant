@@ -1,14 +1,18 @@
 const vouchersState = {
   vouchers: [],
-  query: ''
+  query: '',
+  page: 1,
+  pageSize: 10
 };
 
 async function initVouchers() {
+  vouchersState.page = 1;
   bindVoucherEvents();
   window.AdminApp.configureGlobalSearch({
     placeholder: 'Tìm theo mã voucher hoặc loại giảm giá...',
     handler: (value) => {
       vouchersState.query = value.toLowerCase();
+      vouchersState.page = 1;
       renderVouchers();
     }
   });
@@ -70,15 +74,31 @@ function formatVoucherValue(voucher) {
 
 function renderVouchers() {
   const tbody = document.getElementById('vouchers-tbody');
+  const pagination = document.getElementById('vouchers-pagination');
   if (!tbody) return;
 
   const vouchers = getFilteredVouchers();
   if (vouchers.length === 0) {
     tbody.innerHTML = window.AdminApp.renderTableMessage(8, 'Không có voucher phù hợp.');
+    if (pagination) {
+      pagination.innerHTML = '';
+    }
     return;
   }
 
-  tbody.innerHTML = vouchers.map((voucher) => {
+  const paginationMeta = window.AdminPagination.render({
+    containerId: 'vouchers-pagination',
+    items: vouchers,
+    currentPage: vouchersState.page,
+    pageSize: vouchersState.pageSize,
+    onPageChange: (page) => {
+      vouchersState.page = page;
+      renderVouchers();
+    }
+  });
+  vouchersState.page = paginationMeta.page;
+
+  tbody.innerHTML = paginationMeta.items.map((voucher) => {
     const status = getVoucherStatus(voucher);
     return `
       <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">

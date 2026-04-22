@@ -1,14 +1,18 @@
 const tablesState = {
   tables: [],
-  query: ''
+  query: '',
+  page: 1,
+  pageSize: 10
 };
 
 async function initTables() {
+  tablesState.page = 1;
   bindTablesEvents();
   window.AdminApp.configureGlobalSearch({
     placeholder: 'Tìm theo tên bàn hoặc mô tả...',
     handler: (value) => {
       tablesState.query = value.toLowerCase();
+      tablesState.page = 1;
       renderTables();
     }
   });
@@ -57,15 +61,31 @@ function getFilteredTables() {
 
 function renderTables() {
   const grid = document.getElementById('tables-grid');
+  const pagination = document.getElementById('tables-pagination');
   if (!grid) return;
 
   const tables = getFilteredTables();
   if (tables.length === 0) {
     grid.innerHTML = '<div class="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Không có bàn phù hợp.</div>';
+    if (pagination) {
+      pagination.innerHTML = '';
+    }
     return;
   }
 
-  grid.innerHTML = tables.map((table) => {
+  const paginationMeta = window.AdminPagination.render({
+    containerId: 'tables-pagination',
+    items: tables,
+    currentPage: tablesState.page,
+    pageSize: tablesState.pageSize,
+    onPageChange: (page) => {
+      tablesState.page = page;
+      renderTables();
+    }
+  });
+  tablesState.page = paginationMeta.page;
+
+  grid.innerHTML = paginationMeta.items.map((table) => {
     const statusClassMap = {
       AVAILABLE: 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800',
       RESERVED: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800',

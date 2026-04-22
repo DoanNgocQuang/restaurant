@@ -109,62 +109,110 @@ function renderRevenueChart(data) {
   });
 }
 
+let dishesChartInstance = null;
+
 async function initStatsDishes() {
+  const monthInput = document.getElementById('stats-dishes-month');
+  if (monthInput && !monthInput.value) {
+    const now = new Date();
+    monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  if (monthInput && !monthInput.dataset.bound) {
+    monthInput.dataset.bound = 'true';
+    monthInput.addEventListener('change', () => {
+      renderStatsDishes();
+    });
+  }
+
   await renderStatsDishes();
 }
 
 async function renderStatsDishes() {
   const tbody = document.getElementById('stats-dishes-tbody');
-  if (!tbody) return;
+  const monthInput = document.getElementById('stats-dishes-month');
+  if (!tbody || !monthInput) return;
+
+  const value = monthInput.value;
+  if(!value) return;
+  
+  const [year, month] = value.split('-');
 
   try {
-    const foods = await window.AdminApp.request('/foods');
+    const foods = await window.AdminApp.request(`/orders/top-foods?month=${month}&year=${year}`);
     const items = Array.isArray(foods) ? foods : [];
 
-    document.getElementById('stats-dishes-total').textContent = window.AdminApp.formatNumber(items.length);
-    document.getElementById('stats-dishes-available').textContent = window.AdminApp.formatNumber(items.filter((item) => item.status === 'AVAILABLE').length);
-    document.getElementById('stats-dishes-unavailable').textContent = window.AdminApp.formatNumber(items.filter((item) => item.status !== 'AVAILABLE').length);
-
     if (items.length === 0) {
-      tbody.innerHTML = window.AdminApp.renderTableMessage(5, 'Chưa có món ăn để thống kê.');
+      tbody.innerHTML = window.AdminApp.renderTableMessage(4, 'Chưa có món ăn nào được bán trong tháng này.');
+      renderDishesChart([]);
       return;
     }
 
-    const grouped = items.reduce((accumulator, item) => {
-      const categoryName = item.category?.name || 'Chưa phân loại';
-      if (!accumulator[categoryName]) {
-        accumulator[categoryName] = {
-          total: 0,
-          available: 0,
-          outOfStock: 0,
-          sumPrice: 0
-        };
-      }
+    tbody.innerHTML = items.map((item, index) => {
+        let rankHtml = `<span class="bg-slate-100 text-slate-500 font-bold px-2.5 py-1 rounded-md text-xs">#${index + 1}</span>`;
+        if (index === 0) rankHtml = `<span class="bg-yellow-100 text-yellow-600 font-bold px-2.5 py-1 rounded-md text-xs">#1</span>`;
+        if (index === 1) rankHtml = `<span class="bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-md text-xs">#2</span>`;
+        if (index === 2) rankHtml = `<span class="bg-orange-100 text-orange-600 font-bold px-2.5 py-1 rounded-md text-xs">#3</span>`;
 
-      accumulator[categoryName].total += 1;
-      accumulator[categoryName].sumPrice += Number(item.price || 0);
-      if (item.status === 'AVAILABLE') {
-        accumulator[categoryName].available += 1;
-      }
-      if (item.status === 'OUT_OF_STOCK') {
-        accumulator[categoryName].outOfStock += 1;
-      }
+        return `
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+            <td class="px-5 py-4 whitespace-nowrap">${rankHtml}</td>
+            <td class="px-5 py-4 text-sm font-bold text-slate-900 dark:text-white capitalize">${window.AdminApp.escapeHtml(item.foodName)}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-emerald-600 font-black text-right">${window.AdminApp.formatNumber(item.totalSold)}</td>
+            <td class="px-5 py-4 whitespace-nowrap text-sm text-primary font-bold text-right">${window.AdminApp.formatCurrency(item.totalRevenue)}</td>
+          </tr>
+        `;
+    }).join('');
 
-      return accumulator;
-    }, {});
-
-    tbody.innerHTML = Object.entries(grouped).map(([categoryName, item]) => `
-      <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">${window.AdminApp.escapeHtml(categoryName)}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatNumber(item.total)}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatNumber(item.available)}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatNumber(item.outOfStock)}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600 dark:text-green-400">${window.AdminApp.formatCurrency(item.sumPrice / item.total)}</td>
-      </tr>
-    `).join('');
+    renderDishesChart(items);
   } catch (error) {
-    tbody.innerHTML = window.AdminApp.renderTableMessage(5, error.message || 'Không thể tải tổng quan thực đơn.', 'error');
+    tbody.innerHTML = window.AdminApp.renderTableMessage(4, error.message || 'Không thể tải thống kê món ăn bán chạy.', 'error');
   }
+}
+
+function renderDishesChart(data) {
+  const canvas = document.getElementById('dishesChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  if (dishesChartInstance) {
+    dishesChartInstance.destroy();
+  }
+
+  if (!data || data.length === 0) {
+    return;
+  }
+
+  const chartData = data.slice(0, 10);
+
+  dishesChartInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: chartData.map((item) => window.AdminApp.escapeHtml(item.foodName).substring(0, 20)),
+      datasets: [
+        {
+          label: 'Số suất đã bán',
+          data: chartData.map((item) => Number(item.totalSold)),
+          backgroundColor: 'rgba(128, 0, 32, 0.85)',
+          borderRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      }
+    }
+  });
 }
 
 async function initStatsHours() {

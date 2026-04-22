@@ -6,8 +6,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.ngocquang.restautant.common.CurrentUserUtil;
 import com.ngocquang.restautant.common.helper.BadRequestException;
 import com.ngocquang.restautant.common.helper.ResourceNotFoundException;
+import com.ngocquang.restautant.modules.user.entity.User;
 import com.ngocquang.restautant.modules.voucher.dto.VoucherRequest;
 import com.ngocquang.restautant.modules.voucher.dto.VoucherResponse;
 import com.ngocquang.restautant.modules.voucher.entity.Voucher;
@@ -22,6 +24,7 @@ public class VoucherService {
 
     private final VoucherRepository voucherRepository;
     private final VoucherDetailRepository voucherDetailRepository;
+    private final CurrentUserUtil currentUserUtil;
 
     private VoucherResponse toResponse(Voucher voucher) {
         return VoucherResponse.builder()
@@ -96,6 +99,31 @@ public class VoucherService {
 
         requestToEntity(voucherInDb, request);
         return toResponse(voucherRepository.save(voucherInDb));
+    }
+
+    public void validateVoucherEligibility(Voucher voucher, User user) {
+        LocalDateTime now = LocalDateTime.now();
+        if (now.isBefore(voucher.getStartDate()) || now.isAfter(voucher.getEndDate())) {
+            throw new BadRequestException("Voucher is expired or not yet active");
+        }
+
+        if (voucher.getQuantity() <= 0) {
+            throw new BadRequestException("Voucher is out of stock");
+        }
+
+        if (voucherDetailRepository.existsByVoucherIdAndUserId(voucher.getId(), user.getId())) {
+            throw new BadRequestException("You have already used this voucher");
+        }
+    }
+
+    public VoucherResponse validateVoucherByCode(String code) {
+        Voucher voucher = voucherRepository.findByCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Voucher not found with code: " + code));
+        User user = currentUserUtil.getCurrentUser();
+
+        validateVoucherEligibility(voucher, user);
+
+        return toResponse(voucher);
     }
 
     public void deleteVoucherById(Integer id) {

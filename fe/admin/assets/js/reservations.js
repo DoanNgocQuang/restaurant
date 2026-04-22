@@ -3,13 +3,17 @@ const reservationsState = {
   tables: [],
   users: [],
   query: "",
+  page: 1,
+  pageSize: 10,
 };
 
 async function initReservations() {
+  reservationsState.page = 1;
   window.AdminApp.configureGlobalSearch({
     placeholder: "Tìm booking theo khách, số điện thoại, ghi chú...",
     handler: (value) => {
       reservationsState.query = value.toLowerCase();
+      reservationsState.page = 1;
       renderReservations();
     },
   });
@@ -100,6 +104,7 @@ function getFilteredBookings() {
 
 function renderReservations() {
   const tbody = document.getElementById("reservations-tbody");
+  const pagination = document.getElementById("reservations-pagination");
   if (!tbody) return;
 
   const bookings = getFilteredBookings();
@@ -108,6 +113,9 @@ function renderReservations() {
       7,
       "Không có booking phù hợp.",
     );
+    if (pagination) {
+      pagination.innerHTML = "";
+    }
     return;
   }
 
@@ -120,7 +128,19 @@ function renderReservations() {
       "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
   };
 
-  tbody.innerHTML = bookings
+  const paginationMeta = window.AdminPagination.render({
+    containerId: "reservations-pagination",
+    items: bookings,
+    currentPage: reservationsState.page,
+    pageSize: reservationsState.pageSize,
+    onPageChange: (page) => {
+      reservationsState.page = page;
+      renderReservations();
+    },
+  });
+  reservationsState.page = paginationMeta.page;
+
+  tbody.innerHTML = paginationMeta.items
     .map(
       (booking) => `
     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
