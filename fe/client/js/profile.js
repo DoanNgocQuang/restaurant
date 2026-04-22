@@ -1,12 +1,17 @@
 ﻿import { renderNavbar, renderFooter } from "../components/index.js";
 
 const API = "http://localhost:8080/api";
+const HISTORY_PAGE_SIZE = 5;
 
 let activeTab = "reservations";
 let isEditing = false;
 let currentUser = null;
 let currentUserBookings = [];
 let currentUserOrders = [];
+let bookingPage = 1;
+let orderPage = 1;
+let bookingSort = createHistorySort();
+let orderSort = createHistorySort();
 
 const navItems = [
   {
@@ -58,6 +63,116 @@ function formatDateTime(dateString) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function createHistorySort() {
+  return {
+    createdOrder: "desc",
+    usageOrder: "desc",
+  };
+}
+
+function sortByCreatedAtDesc(items) {
+  return [...items].sort((first, second) => {
+    const firstTime = new Date(first?.createdAt || 0).getTime();
+    const secondTime = new Date(second?.createdAt || 0).getTime();
+    return secondTime - firstTime;
+  });
+}
+
+function paginateItems(items, page) {
+  const totalPages = Math.max(1, Math.ceil(items.length / HISTORY_PAGE_SIZE));
+  const currentPage = Math.min(Math.max(page, 1), totalPages);
+  const startIndex = (currentPage - 1) * HISTORY_PAGE_SIZE;
+
+  return {
+    items: items.slice(startIndex, startIndex + HISTORY_PAGE_SIZE),
+    currentPage,
+    totalPages,
+    totalItems: items.length,
+  };
+}
+
+function compareDateValues(firstValue, secondValue, order) {
+  const firstTime = firstValue ? new Date(firstValue).getTime() : 0;
+  const secondTime = secondValue ? new Date(secondValue).getTime() : 0;
+
+  if (Number.isNaN(firstTime) || Number.isNaN(secondTime)) return 0;
+  return order === "asc" ? firstTime - secondTime : secondTime - firstTime;
+}
+
+function sortHistoryItems(items, sortConfig, usageField) {
+  return [...items].sort((first, second) => {
+    const createdComparison = compareDateValues(
+      first?.createdAt,
+      second?.createdAt,
+      sortConfig.createdOrder,
+    );
+    if (createdComparison !== 0) return createdComparison;
+
+    return compareDateValues(
+      first?.[usageField],
+      second?.[usageField],
+      sortConfig.usageOrder,
+    );
+  });
+}
+
+function renderHistorySortControls(type, sortConfig, options) {
+  const { showUsageSort = true, usageLabel = "thời gian dùng" } = options;
+  return `
+    <div class="mb-4 flex justify-end">
+      <details class="history-sort-menu relative">
+        <summary class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-primary/20 bg-white text-slate-700 shadow-sm transition hover:bg-primary/5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54z"/></svg>
+        </summary>
+        <div class="absolute right-0 z-10 mt-2 w-64 rounded-xl border border-primary/20 bg-white p-3 shadow-xl">
+          <p class="mb-3 text-sm font-semibold text-slate-700">Sắp xếp</p>
+          <div class="space-y-3">
+            <label class="block text-sm">
+              <span class="mb-1 block text-slate-500">Thời gian tạo</span>
+              <select
+                class="history-sort-select w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-primary"
+                data-type="${type}"
+                data-field="createdOrder"
+              >
+                <option value="desc" ${sortConfig.createdOrder === "desc" ? "selected" : ""}>Giảm dần</option>
+                <option value="asc" ${sortConfig.createdOrder === "asc" ? "selected" : ""}>Tăng dần</option>
+              </select>
+            </label>
+            ${showUsageSort ? `
+            <label class="block text-sm">
+              <span class="mb-1 block text-slate-500">${usageLabel}</span>
+              <select
+                class="history-sort-select w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-primary"
+                data-type="${type}"
+                data-field="usageOrder"
+              >
+                <option value="desc" ${sortConfig.usageOrder === "desc" ? "selected" : ""}>Giảm dần</option>
+                <option value="asc" ${sortConfig.usageOrder === "asc" ? "selected" : ""}>Tăng dần</option>
+              </select>
+            </label>
+            ` : ""}
+          </div>
+        </div>
+      </details>
+    </div>
+  `;
+}
+
+function attachHistorySortEvents() {
+  document.querySelectorAll(".history-sort-select").forEach((select) => {
+    select.addEventListener("change", (event) => {
+      const { type, field } = event.currentTarget.dataset;
+      const sortConfig = type === "reservations" ? bookingSort : orderSort;
+      sortConfig[field] = event.currentTarget.value;
+
+      if (type === "reservations") bookingPage = 1;
+      if (type === "orders") orderPage = 1;
+
+      renderProfileContent();
+    });
+  });
 }
 
 function getBookingStatusBadge(status) {
@@ -132,6 +247,55 @@ function renderProfileNav() {
   });
 }
 
+function renderPaginationControls(type, currentPage, totalPages) {
+  if (totalPages <= 1) return "";
+
+  return `
+    <div class="mt-6 flex flex-col gap-3 border-t border-primary/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-sm text-slate-500">Trang ${currentPage}/${totalPages}</p>
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          class="history-pagination rounded-lg border border-primary/20 px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
+          data-type="${type}"
+          data-direction="prev"
+          ${currentPage === 1 ? "disabled" : ""}
+        >
+          Trước
+        </button>
+        <button
+          type="button"
+          class="history-pagination rounded-lg border border-primary/20 px-4 py-2 text-sm font-medium transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
+          data-type="${type}"
+          data-direction="next"
+          ${currentPage === totalPages ? "disabled" : ""}
+        >
+          Sau
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+function attachPaginationEvents() {
+  document.querySelectorAll(".history-pagination").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const { type, direction } = event.currentTarget.dataset;
+
+      if (type === "reservations") {
+        bookingPage += direction === "next" ? 1 : -1;
+      }
+
+      if (type === "orders") {
+        orderPage += direction === "next" ? 1 : -1;
+      }
+
+      renderProfileContent();
+    });
+  });
+}
+
+
 async function updateProfileHeader() {
   if (!currentUser) return;
 
@@ -147,7 +311,6 @@ async function updateProfileHeader() {
     (sum, order) => sum + (order.totalAmount || 0),
     0,
   );
-
   const statsEls = document.querySelectorAll("aside .grid span");
   if (statsEls.length >= 2) {
     statsEls[0].textContent = totalSpent.toLocaleString("vi-VN", {
@@ -202,10 +365,14 @@ async function loadUserBookings() {
     if (!response.ok) throw new Error("Lỗi khi tải lịch sử đặt bàn");
 
     const json = await response.json();
-    currentUserBookings = Array.isArray(json.data) ? json.data : [];
+    currentUserBookings = sortByCreatedAtDesc(
+      Array.isArray(json.data) ? json.data : [],
+    );
+    bookingPage = 1;
   } catch (error) {
     console.error("Error loading bookings:", error);
     currentUserBookings = [];
+    bookingPage = 1;
   }
 }
 
@@ -225,10 +392,14 @@ async function loadUserOrders() {
     if (!response.ok) throw new Error("Lỗi khi tải lịch sử đơn hàng");
 
     const json = await response.json();
-    currentUserOrders = Array.isArray(json.data) ? json.data : [];
+    currentUserOrders = sortByCreatedAtDesc(
+      Array.isArray(json.data) ? json.data : [],
+    );
+    orderPage = 1;
   } catch (error) {
     console.error("Error loading orders:", error);
     currentUserOrders = [];
+    orderPage = 1;
   }
 }
 
@@ -239,12 +410,21 @@ function renderProfileContent() {
   let html = "";
 
   if (activeTab === "reservations") {
+    const sortedBookings = sortHistoryItems(
+      currentUserBookings,
+      bookingSort,
+      "bookingTime",
+    );
+    const pagedBookings = paginateItems(sortedBookings, bookingPage);
+    bookingPage = pagedBookings.currentPage;
+
     if (currentUserBookings.length === 0) {
       html = `
         <section class="bg-white dark:bg-primary/5 rounded-2xl p-8 border border-primary/10 shadow-xl animate-fade-in-up">
           <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg> Lịch sử đặt bàn
           </h3>
+          ${renderHistorySortControls("reservations", bookingSort, { showUsageSort: true, usageLabel: "TG dùng" })}
           <p class="text-slate-400 text-center py-8">Bạn chưa có lịch sử đặt bàn nào. <a href="/pages/reservations.html" class="text-primary font-semibold hover:underline">Đặt bàn ngay</a></p>
         </section>
       `;
@@ -254,8 +434,9 @@ function renderProfileContent() {
           <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg> Lịch sử đặt bàn
           </h3>
+          ${renderHistorySortControls("reservations", bookingSort, { showUsageSort: true, usageLabel: "TG dùng" })}
           <div class="space-y-4">
-            ${currentUserBookings
+            ${pagedBookings.items
               .map((booking) => {
                 const statusBadge = getBookingStatusBadge(booking.status);
                 return `
@@ -265,8 +446,9 @@ function renderProfileContent() {
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
                     </div>
                     <div>
-                      <h4 class="font-bold">${formatDate(booking.bookingTime)} - ${new Date(booking.bookingTime).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</h4>
+                      <h4 class="font-bold">Đặt lúc ${formatDateTime(booking.createdAt)}</h4>
                       <p class="text-sm text-slate-500">${booking.guestCount} khách • ${booking.contactName}</p>
+                      <p class="text-sm text-slate-500">Dùng bàn lúc ${formatDateTime(booking.bookingTime)}</p>
                     </div>
                   </div>
                   <div class="flex items-center gap-4 w-full md:w-auto md:justify-end">
@@ -279,16 +461,24 @@ function renderProfileContent() {
               })
               .join("")}
           </div>
+          ${renderPaginationControls("reservations", pagedBookings.currentPage, pagedBookings.totalPages)}
         </section>
       `;
     }
   } else if (activeTab === "orders") {
+    const sortedOrders = [...currentUserOrders].sort((first, second) =>
+      compareDateValues(first?.createdAt, second?.createdAt, orderSort.createdOrder),
+    );
+    const pagedOrders = paginateItems(sortedOrders, orderPage);
+    orderPage = pagedOrders.currentPage;
+
     if (currentUserOrders.length === 0) {
       html = `
         <section class="bg-white dark:bg-primary/5 rounded-2xl p-8 border border-primary/10 shadow-xl animate-fade-in-up">
           <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Lịch sử đơn hàng
           </h3>
+          ${renderHistorySortControls("orders", orderSort, { showUsageSort: false })}
           <p class="text-slate-400 text-center py-8">Bạn chưa có đơn hàng nào. <a href="/pages/menu.html" class="text-primary font-semibold hover:underline">Gọi món ngay</a></p>
         </section>
       `;
@@ -298,8 +488,9 @@ function renderProfileContent() {
           <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Lịch sử đơn hàng
           </h3>
+          ${renderHistorySortControls("orders", orderSort, { showUsageSort: false })}
           <div class="space-y-4">
-            ${currentUserOrders
+            ${pagedOrders.items
               .map((order) => {
                 const statusBadge = getOrderStatusBadge(order.status);
                 return `
@@ -324,6 +515,7 @@ function renderProfileContent() {
               })
               .join("")}
           </div>
+          ${renderPaginationControls("orders", pagedOrders.currentPage, pagedOrders.totalPages)}
         </section>
       `;
     }
@@ -425,6 +617,9 @@ function renderProfileContent() {
         .addEventListener("submit", handleUpdateProfile);
     }
   }
+
+  attachPaginationEvents();
+  attachHistorySortEvents();
 }
 
 async function handleUpdateProfile(e) {
