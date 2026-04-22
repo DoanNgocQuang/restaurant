@@ -36,7 +36,8 @@ public class ComboService {
         List<ComboResponse.OutputFood> foods = comboDetails.stream()
                 .map(detail -> new ComboResponse.OutputFood(
                         detail.getFood().getId(),
-                        detail.getFood().getName()))
+                        detail.getFood().getName(),
+                        detail.getQuantity()))
                 .collect(Collectors.toList());
 
         return new ComboResponse(
@@ -62,10 +63,9 @@ public class ComboService {
             throw new BadRequestException("Combo must contain at least one food item");
         }
 
-        Set<Integer> foodIds = new HashSet<>();
         for (ComboRequest.InputFood food : foods) {
-            if (!foodIds.add(food.getFoodId())) {
-                throw new BadRequestException("A food item can only appear once in a combo");
+            if (food.getQuantity() == null || food.getQuantity() < 1) {
+                food.setQuantity(1);
             }
         }
     }
@@ -111,7 +111,7 @@ public class ComboService {
             ComboDetail comboDetail = new ComboDetail();
             comboDetail.setCombo(combo);
             comboDetail.setFood(food);
-            comboDetail.setQuantity(1);
+            comboDetail.setQuantity(inputFood.getQuantity() != null ? inputFood.getQuantity() : 1);
             return comboDetail;
         }).collect(Collectors.toList());
     }
