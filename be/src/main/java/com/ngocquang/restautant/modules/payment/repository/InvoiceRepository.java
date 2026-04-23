@@ -8,9 +8,12 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
+
+    Optional<Invoice> findByBooking_Id(Integer bookingId);
 
     @Query(value = """
         SELECT 

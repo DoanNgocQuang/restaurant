@@ -4,6 +4,10 @@ import com.ngocquang.restautant.common.CurrentUserUtil;
 import com.ngocquang.restautant.common.helper.BadRequestException;
 import com.ngocquang.restautant.common.helper.ResourceNotFoundException;
 import com.ngocquang.restautant.modules.checkout.dto.CheckoutRequestDto;
+import com.ngocquang.restautant.modules.payment.entity.Invoice;
+import com.ngocquang.restautant.modules.payment.entity.Payment;
+import com.ngocquang.restautant.modules.payment.repository.InvoiceRepository;
+import com.ngocquang.restautant.modules.payment.repository.PaymentRepository;
 import com.ngocquang.restautant.modules.order.dto.OrderDto;
 import com.ngocquang.restautant.modules.order.dto.OrderDetailDto;
 import com.ngocquang.restautant.modules.order.entity.Order;
@@ -33,14 +37,69 @@ public class CheckoutService {
     private final OrderRepository orderRepository;
     private final CurrentUserUtil currentUserUtil;
     private final SystemLogService systemLogService;
+    private final InvoiceRepository invoiceRepository;
+    private final PaymentRepository paymentRepository;
     private final VoucherRepository voucherRepository;
     private final VoucherDetailRepository voucherDetailRepository;
 
     private final VoucherService voucherService;
 
+    private Payment.Method resolvePaymentMethod(String paymentMethod) {
+        if (paymentMethod == null || paymentMethod.isBlank()) {
+            throw new BadRequestException("Payment method cannot be blank");
+        }
+
+        String normalizedMethod = paymentMethod.trim().toUpperCase();
+        return switch (normalizedMethod) {
+            case "CASH" -> Payment.Method.CASH;
+            case "BANK_TRANSFER", "VNPAY" -> Payment.Method.BANK_TRANSFER;
+            default -> throw new BadRequestException("Unsupported payment method: " + paymentMethod);
+        };
+    }
+
+    private BigDecimal calculateBookingTotal(Order order) {
+        if (order.getBooking() == null) {
+            throw new BadRequestException("Order does not have a booking, unable to create invoice");
+        }
+
+        return orderRepository.findByBookingAndStatusNot(order.getBooking(), OrderStatus.CANCELLED)
+                .stream()
+                .map(Order::getTotal_amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private Invoice upsertInvoice(Order order, BigDecimal totalAmount, Voucher voucher) {
+        Integer bookingId = order.getBooking().getId();
+        Invoice invoice = invoiceRepository.findByBooking_Id(bookingId)
+                .orElseGet(() -> Invoice.builder()
+                        .booking(order.getBooking())
+                        .createdAt(LocalDateTime.now())
+                        .build());
+
+        invoice.setBooking(order.getBooking());
+        invoice.setTotalAmount(totalAmount);
+        invoice.setVoucher(voucher);
+        return invoiceRepository.save(invoice);
+    }
+
+    private Payment upsertPayment(Invoice invoice, BigDecimal amount, Payment.Method method) {
+        Payment payment = paymentRepository.findByInvoice_Id(invoice.getId())
+                .orElseGet(() -> Payment.builder()
+                        .invoice(invoice)
+                        .paidAt(LocalDateTime.now())
+                        .build());
+
+        payment.setInvoice(invoice);
+        payment.setMethod(method);
+        payment.setAmount(amount);
+        payment.setPaidAt(LocalDateTime.now());
+        return paymentRepository.save(payment);
+    }
+
     @Transactional
     public OrderDto processCheckout(CheckoutRequestDto request) {
         User user = currentUserUtil.getCurrentUser();
+        Payment.Method paymentMethod = resolvePaymentMethod(request.getPaymentMethod());
 
         Order order = orderRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + request.getOrderId()));
@@ -53,6 +112,7 @@ public class CheckoutService {
             throw new BadRequestException("Order is currently in " + order.getStatus() + " status, unable to checkout");
         }
 
+        Voucher appliedVoucher = null;
         if (request.getVoucherCode() != null && !request.getVoucherCode().trim().isEmpty()) {
             Voucher voucher = voucherRepository.findByCode(request.getVoucherCode())
                     .orElseThrow(() -> new ResourceNotFoundException("Voucher not found"));
@@ -89,13 +149,22 @@ public class CheckoutService {
                     "Áp dụng Voucher " + voucher.getCode() + " cho Order #" + order.getId(),
                     user
             );
+
+            appliedVoucher = voucher;
         }
 
         order = orderRepository.save(order);
+        BigDecimal bookingTotal = calculateBookingTotal(order);
+        Invoice invoice = upsertInvoice(order, bookingTotal, appliedVoucher);
+        Payment payment = upsertPayment(invoice, bookingTotal, paymentMethod);
 
         systemLogService.log(
                 SystemAction.UPDATE,
-                "Checkout submitted for order #" + order.getId() + " via " + request.getPaymentMethod() + " | trạng thái giữ ở PENDING",
+                "Checkout created invoice #" + invoice.getId()
+                        + " and payment #" + payment.getId()
+                        + " for order #" + order.getId()
+                        + " via " + paymentMethod
+                        + " | trạng thái order giữ ở PENDING",
                 user
         );
 
