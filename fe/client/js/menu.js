@@ -160,7 +160,8 @@ async function renderFoodDetail(id) {
         itemId: food.id,
         name: food.name,
         price: Number(food.price),
-        quantity: Number(get('qty').value || 1)
+        quantity: Number(get('qty').value || 1),
+        imageUrl: food.imageUrl
       });
     };
 
@@ -206,18 +207,21 @@ async function renderComboDetail(id) {
 
     el.innerHTML = `
       ${backBtn()}
-      <div class="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-md">
-        <h2 class="text-3xl font-bold text-white">${combo.name}</h2>
-        <p class="text-slate-300">${combo.description || ''}</p>
-        <p class="text-2xl font-bold text-primary">${formatCurrency(combo.price)}</p>
-        <div class="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-slate-300">
-          ${(combo.foods || []).length > 0
-            ? combo.foods.map((food) => `<div>${food.foodName}</div>`).join('')
-            : 'Combo này chưa có mô tả món đi kèm.'}
+      <div class="grid items-center gap-12 md:grid-cols-2">
+        <img src="${combo.imageUrl || '/images/placeholder.jpg'}" class="h-[400px] w-full rounded-2xl object-cover shadow-2xl"/>
+        <div class="space-y-4">
+          <h2 class="text-4xl font-black text-white">${combo.name}</h2>
+          <p class="text-slate-300">${combo.description || ''}</p>
+          <p class="text-2xl font-bold text-primary">${formatCurrency(combo.price)}</p>
+          <div class="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-slate-300">
+            ${(combo.foods || []).length > 0
+              ? combo.foods.map((food) => `<div>${food.foodName}</div>`).join('')
+              : 'Combo này chưa có mô tả món đi kèm.'}
+          </div>
+          <button id="add" class="mt-6 rounded-xl bg-primary px-6 py-3 font-bold text-black transition-all hover:scale-105">
+            Thêm combo
+          </button>
         </div>
-        <button id="add" class="rounded-xl bg-primary px-6 py-3 font-bold text-black transition-all hover:scale-105">
-          Thêm combo
-        </button>
       </div>
     `;
 
@@ -227,7 +231,8 @@ async function renderComboDetail(id) {
         itemId: combo.id,
         name: combo.name,
         price: Number(combo.price),
-        quantity: 1
+        quantity: 1,
+        imageUrl: combo.imageUrl
       });
     };
 

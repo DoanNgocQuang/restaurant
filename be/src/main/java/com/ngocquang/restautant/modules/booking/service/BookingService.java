@@ -17,6 +17,9 @@ import com.ngocquang.restautant.modules.booking.dto.BookingRequest;
 import com.ngocquang.restautant.modules.booking.dto.BookingResponse;
 import com.ngocquang.restautant.modules.booking.entity.Booking;
 import com.ngocquang.restautant.modules.booking.repository.BookingRepository;
+import com.ngocquang.restautant.modules.order.entity.Order;
+import com.ngocquang.restautant.modules.order.entity.OrderStatus;
+import com.ngocquang.restautant.modules.order.repository.OrderRepository;
 import com.ngocquang.restautant.modules.table.entity.resTable;
 import com.ngocquang.restautant.modules.table.repository.resTableRepository;
 import com.ngocquang.restautant.modules.user.entity.User;
@@ -33,6 +36,7 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final resTableRepository tableRepository;
+    private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final CurrentUserUtil currentUserUtil;
 
@@ -243,6 +247,17 @@ public class BookingService {
                 table.setReservedAt(now);
             }
             this.tableRepository.saveAll(tables);
+        }
+
+        // Automatically confirm all orders associated with this booking
+        List<Order> orders = savedBooking.getOrders();
+        if (orders != null && !orders.isEmpty()) {
+            for (Order order : orders) {
+                if (order.getStatus() != OrderStatus.CONFIRMED && order.getStatus() != OrderStatus.CANCELLED) {
+                    order.setStatus(OrderStatus.CONFIRMED);
+                }
+            }
+            this.orderRepository.saveAll(orders);
         }
 
         return toResponse(savedBooking);
