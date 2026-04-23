@@ -220,7 +220,13 @@ function openFoodModal(foodId = null) {
       </div>
       <div>
         <label class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Ảnh URL</label>
-        <input type="text" id="food-image-url" value="${window.AdminApp.escapeHtml(food?.imageUrl || '')}" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-700 dark:bg-slate-900" />
+        <div class="flex gap-2">
+          <input type="text" id="food-image-url" value="${window.AdminApp.escapeHtml(food?.imageUrl || '')}" placeholder="URL ảnh" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 dark:border-slate-700 dark:bg-slate-900" />
+          <input type="file" id="food-image-file" accept="image/*" class="hidden" onchange="uploadFoodImage(event)" />
+          <button type="button" onclick="document.getElementById('food-image-file').click()" class="rounded-xl bg-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 whitespace-nowrap">
+            Tải lên
+          </button>
+        </div>
       </div>
     </div>
     <div>
@@ -349,7 +355,41 @@ async function deleteCategory(categoryId) {
     }
     window.AdminApp.showToast('Đã xóa danh mục.');
     await loadFoodsData();
-  } catch (error) {
+} catch (error) {
     window.AdminApp.showToast(error.message || 'Không thể xóa danh mục.', 'error');
   }
 }
+
+window.uploadFoodImage = async function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const token = localStorage.getItem('token');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    window.AdminApp.showToast('Đang tải ảnh lên...', 'info');
+
+    const response = await fetch(`${window.AdminApp.API_BASE}/upload`, {
+      method: 'POST',
+      headers,
+      body: formData
+    });
+
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.status === 'error') {
+      throw new Error(payload?.message || 'Tải ảnh thất bại');
+    }
+
+    document.getElementById('food-image-url').value = payload.data;
+    window.AdminApp.showToast('Tải ảnh thành công');
+  } catch (error) {
+    window.AdminApp.showToast(error.message, 'error');
+  } finally {
+    event.target.value = '';
+  }
+};

@@ -5,7 +5,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,12 +35,18 @@ public class Invoice {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "voucher_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Voucher voucher;
 
     @OneToOne(mappedBy = "invoice")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Payment payment;
 
     @OneToOne
     @JoinColumn(name="booking_id",unique = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Booking booking;
 }

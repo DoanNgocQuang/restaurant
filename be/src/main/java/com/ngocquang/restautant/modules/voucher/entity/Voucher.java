@@ -1,6 +1,5 @@
 package com.ngocquang.restautant.modules.voucher.entity;
 
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +13,7 @@ import java.util.List;
 import com.ngocquang.restautant.modules.payment.entity.Invoice;
 
 @Entity
-@Table(name="voucher")
+@Table(name = "voucher")
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -31,8 +30,8 @@ public class Voucher {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal discountValue;
 
-    @Column(nullable = false,updatable = false)
-    private LocalDateTime startDate = LocalDateTime.now();
+    @Column(nullable = false)
+    private LocalDateTime startDate;
 
     @Column(nullable = false)
     private LocalDateTime endDate;
@@ -40,10 +39,12 @@ public class Voucher {
     @Column(nullable = false)
     private Integer quantity;
 
-    public enum DiscountType { PERCENT, FIXED }
+    public enum DiscountType {
+        PERCENT, FIXED
+    }
 
     @Enumerated(EnumType.STRING)
-    @Column( nullable = false)
+    @Column(nullable = false)
     private DiscountType discountType = DiscountType.FIXED;
 
     @OneToMany(mappedBy = "voucher")

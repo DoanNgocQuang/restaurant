@@ -215,7 +215,22 @@ function renderDishesChart(data) {
   });
 }
 
+let hoursChartInstance = null;
+
 async function initStatsHours() {
+  const monthInput = document.getElementById('stats-hours-month');
+  if (monthInput && !monthInput.value) {
+    const now = new Date();
+    monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  if (monthInput && !monthInput.dataset.bound) {
+    monthInput.dataset.bound = 'true';
+    monthInput.addEventListener('change', () => {
+      renderStatsHours();
+    });
+  }
+
   await renderStatsHours();
 }
 
@@ -223,22 +238,38 @@ async function renderStatsHours() {
   const tbody = document.getElementById('stats-hours-tbody');
   if (!tbody) return;
 
+  const monthInput = document.getElementById('stats-hours-month');
+  const filterMonth = monthInput ? monthInput.value : null;
+
   try {
     const bookings = await window.AdminApp.request('/bookings');
-    const items = Array.isArray(bookings) ? bookings : [];
+    let items = Array.isArray(bookings) ? bookings : [];
+
+    // Filter by selected month if provided
+    if (filterMonth) {
+      const [filterYear, filterMon] = filterMonth.split('-').map(Number);
+      items = items.filter((booking) => {
+        const d = new Date(booking.bookingTime);
+        return !Number.isNaN(d.getTime()) && d.getFullYear() === filterYear && (d.getMonth() + 1) === filterMon;
+      });
+    }
+
     if (items.length === 0) {
-      tbody.innerHTML = window.AdminApp.renderTableMessage(4, 'Chưa có booking để thống kê.');
+      tbody.innerHTML = window.AdminApp.renderTableMessage(4, 'Chưa có booking để thống kê trong khoảng thời gian này.');
+      renderHoursChart([]);
       return;
     }
 
     const grouped = items.reduce((accumulator, booking) => {
       const bookingDate = new Date(booking.bookingTime);
-      const hourLabel = Number.isNaN(bookingDate.getTime())
-        ? 'Không xác định'
-        : `${String(bookingDate.getHours()).padStart(2, '0')}:00 - ${String((bookingDate.getHours() + 1) % 24).padStart(2, '0')}:00`;
+      const hour = Number.isNaN(bookingDate.getTime()) ? -1 : bookingDate.getHours();
+      if (hour === -1) return accumulator;
+
+      const hourLabel = `${String(hour).padStart(2, '0')}:00 - ${String((hour + 1) % 24).padStart(2, '0')}:00`;
 
       if (!accumulator[hourLabel]) {
         accumulator[hourLabel] = {
+          hour: hour,
           bookings: 0,
           guests: 0
         };
@@ -249,21 +280,134 @@ async function renderStatsHours() {
       return accumulator;
     }, {});
 
-    tbody.innerHTML = Object.entries(grouped)
-      .sort(([first], [second]) => first.localeCompare(second))
-      .map(([hour, item]) => `
-        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">${window.AdminApp.escapeHtml(hour)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatNumber(item.bookings)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatNumber(item.guests)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600 dark:text-green-400">${(item.guests / item.bookings).toFixed(1)}</td>
-        </tr>
-      `).join('');
+    const sortedEntries = Object.entries(grouped)
+      .sort(([, a], [, b]) => a.hour - b.hour);
+
+    // Find peak hour
+    let peakHour = '';
+    let peakGuests = 0;
+    sortedEntries.forEach(([hour, item]) => {
+      if (item.guests > peakGuests) {
+        peakGuests = item.guests;
+        peakHour = hour;
+      }
+    });
+
+    tbody.innerHTML = sortedEntries
+      .map(([hour, item]) => {
+        const isPeak = hour === peakHour;
+        const rowHighlight = isPeak ? 'bg-amber-50 dark:bg-amber-900/10' : '';
+        const peakBadge = isPeak ? ' <span class="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"><span class="material-symbols-outlined text-xs">local_fire_department</span>Cao điểm</span>' : '';
+
+        return `
+          <tr class="${rowHighlight} hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">${window.AdminApp.escapeHtml(hour)}${peakBadge}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatNumber(item.bookings)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatNumber(item.guests)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600 dark:text-green-400">${(item.guests / item.bookings).toFixed(1)}</td>
+          </tr>
+        `;
+      }).join('');
+
+    renderHoursChart(sortedEntries);
   } catch (error) {
     tbody.innerHTML = window.AdminApp.renderTableMessage(4, error.message || 'Không thể tải thống kê khung giờ.', 'error');
+    renderHoursChart([]);
   }
+}
+
+function renderHoursChart(sortedEntries) {
+  const canvas = document.getElementById('hoursChart');
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  if (hoursChartInstance) {
+    hoursChartInstance.destroy();
+    hoursChartInstance = null;
+  }
+
+  if (!sortedEntries || sortedEntries.length === 0) return;
+
+  const labels = sortedEntries.map(([hour]) => hour.split(' - ')[0]);
+  const guestsData = sortedEntries.map(([, item]) => item.guests);
+  const bookingsData = sortedEntries.map(([, item]) => item.bookings);
+
+  hoursChartInstance = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Số khách',
+          data: guestsData,
+          backgroundColor: 'rgba(128, 0, 32, 0.85)',
+          borderRadius: 6,
+          order: 1
+        },
+        {
+          label: 'Số booking',
+          data: bookingsData,
+          type: 'line',
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: '#3b82f6',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          borderWidth: 2,
+          order: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            padding: 20
+          }
+        },
+        tooltip: {
+          callbacks: {
+            title(items) {
+              const idx = items[0].dataIndex;
+              return sortedEntries[idx][0];
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          },
+          title: {
+            display: true,
+            text: 'Số lượng'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Khung giờ'
+          }
+        }
+      }
+    }
+  });
 }
 
 window.initStatsMonth = initStatsMonth;
 window.initStatsDishes = initStatsDishes;
 window.initStatsHours = initStatsHours;
+window.renderStatsMonth = renderStatsMonth;
+window.renderStatsHours = renderStatsHours;

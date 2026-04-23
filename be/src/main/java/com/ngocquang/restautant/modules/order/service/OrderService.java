@@ -286,6 +286,7 @@ public class OrderService {
                 .userName(order.getUser() != null ? order.getUser().getFullname() : null)
                 .userEmail(order.getUser() != null ? order.getUser().getEmail() : null)
                 .bookingId(order.getBooking() != null ? order.getBooking().getId() : null)
+                .bookingTime(order.getBooking() != null ? order.getBooking().getBookingTime() : null)
                 .tablesName(tablesName)
                 .status(order.getStatus())
                 .createdAt(order.getCreated_at())

@@ -26,7 +26,7 @@ public class Food {
     @Column(nullable = false,length=40)
     private String name;
 
-    @Column(precision = 10,scale =2,nullable = false)
+    @Column(precision = 15,scale =2,nullable = false)
     private BigDecimal price;
 
     @Column(columnDefinition = "Text",nullable = false)

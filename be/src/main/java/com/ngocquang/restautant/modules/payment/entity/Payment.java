@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -35,5 +37,7 @@ public class Payment {
 
     @OneToOne
     @JoinColumn(name="invoice_id",unique = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Invoice invoice;
 }

@@ -1,6 +1,7 @@
 const routes = {
   '#dashboard': { url: './pages/dashboard/dashboard.html', init: initDashboard },
   '#dishes': { url: './pages/foods/foods.html', init: initFoods },
+  '#combos': { url: './pages/combos/combos.html', init: initCombos },
   '#customers': { url: './pages/customers/customers.html', init: initCustomers },
   '#tables': { url: './pages/tables/tables.html', init: initTables },
   '#reservations': { url: './pages/reservations/reservations.html', init: initReservations },
@@ -90,7 +91,7 @@ function toggleSearchVisibility(hash) {
   const searchContainer = document.getElementById('global-search-container');
   if (!searchContainer) return;
 
-  const managementRoutes = ['#dishes', '#customers', '#tables', '#reservations', '#vouchers', '#orders', '#history'];
+  const managementRoutes = ['#dishes', '#combos', '#customers', '#tables', '#reservations', '#vouchers', '#orders', '#history'];
   if (managementRoutes.includes(hash)) {
     searchContainer.style.opacity = '1';
     searchContainer.style.pointerEvents = 'auto';

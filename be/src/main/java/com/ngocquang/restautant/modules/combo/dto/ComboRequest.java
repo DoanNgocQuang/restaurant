@@ -47,5 +47,7 @@ public class ComboRequest {
         private Integer foodId;
 
         private String foodName;
+
+        private Integer quantity;
     }
 }

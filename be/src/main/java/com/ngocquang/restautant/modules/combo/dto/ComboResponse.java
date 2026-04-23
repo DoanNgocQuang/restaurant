@@ -27,5 +27,6 @@ public class ComboResponse {
     public static class OutputFood {
         private Integer foodId;
         private String foodName;
+        private Integer quantity;
     }
 }
