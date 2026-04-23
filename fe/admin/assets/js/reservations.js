@@ -3,6 +3,9 @@ const reservationsState = {
   tables: [],
   users: [],
   query: "",
+  statusFilter: "",
+  tableFilter: "",
+  dateSort: "desc",
   page: 1,
   pageSize: 10,
 };
@@ -17,7 +20,53 @@ async function initReservations() {
       renderReservations();
     },
   });
+  bindReservationFilters();
   await loadReservationsData();
+}
+
+function bindReservationFilters() {
+  const statusFilter = document.getElementById("reservations-status-filter");
+  const tableFilter = document.getElementById("reservations-table-filter");
+  const dateSort = document.getElementById("reservations-date-sort");
+
+  if (statusFilter) {
+    statusFilter.addEventListener("change", () => {
+      reservationsState.statusFilter = statusFilter.value;
+      reservationsState.page = 1;
+      renderReservations();
+    });
+  }
+
+  if (tableFilter) {
+    tableFilter.addEventListener("change", () => {
+      reservationsState.tableFilter = tableFilter.value;
+      reservationsState.page = 1;
+      renderReservations();
+    });
+  }
+
+  if (dateSort) {
+    dateSort.addEventListener("change", () => {
+      reservationsState.dateSort = dateSort.value;
+      reservationsState.page = 1;
+      renderReservations();
+    });
+  }
+}
+
+function populateTableFilterDropdown() {
+  const select = document.getElementById("reservations-table-filter");
+  if (!select) return;
+
+  const currentValue = select.value;
+  select.innerHTML = '<option value="">Tất cả bàn</option>';
+  reservationsState.tables.forEach((table) => {
+    const option = document.createElement("option");
+    option.value = String(table.id);
+    option.textContent = `${table.name} (${table.capacity} chỗ)`;
+    select.appendChild(option);
+  });
+  select.value = currentValue;
 }
 
 async function loadReservationsData() {
@@ -41,6 +90,7 @@ async function loadReservationsData() {
     reservationsState.users = Array.isArray(users) ? users : [];
 
     renderReservationStats();
+    populateTableFilterDropdown();
     renderReservations();
   } catch (error) {
     console.error(error);
@@ -81,7 +131,8 @@ function getTableLabel(tableInfo) {
 }
 
 function getFilteredBookings() {
-  return reservationsState.bookings.filter((booking) => {
+  let filtered = reservationsState.bookings.filter((booking) => {
+    // Text search
     const tableLabel = (booking.tables || [])
       .map((table) => getTableLabel(table))
       .join(" ");
@@ -95,11 +146,32 @@ function getFilteredBookings() {
     ]
       .join(" ")
       .toLowerCase();
+    const matchesQuery =
+      !reservationsState.query || haystack.includes(reservationsState.query);
 
-    return (
-      !reservationsState.query || haystack.includes(reservationsState.query)
-    );
+    // Status filter
+    const matchesStatus =
+      !reservationsState.statusFilter ||
+      booking.status === reservationsState.statusFilter;
+
+    // Table filter
+    const matchesTable =
+      !reservationsState.tableFilter ||
+      (booking.tables || []).some(
+        (table) => String(table.id) === reservationsState.tableFilter,
+      );
+
+    return matchesQuery && matchesStatus && matchesTable;
   });
+
+  // Date sort
+  filtered.sort((a, b) => {
+    const dateA = new Date(a.bookingTime).getTime() || 0;
+    const dateB = new Date(b.bookingTime).getTime() || 0;
+    return reservationsState.dateSort === "asc" ? dateA - dateB : dateB - dateA;
+  });
+
+  return filtered;
 }
 
 function renderReservations() {

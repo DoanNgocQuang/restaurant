@@ -21,6 +21,31 @@
     </div>
   </div>
 
+  <div class="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 md:grid-cols-3">
+    <div>
+      <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Trạng thái</label>
+      <select id="reservations-status-filter" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+        <option value="">Tất cả trạng thái</option>
+        <option value="PENDING">PENDING</option>
+        <option value="CONFIRMED">CONFIRMED</option>
+        <option value="CANCELLED">CANCELLED</option>
+      </select>
+    </div>
+    <div>
+      <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Bàn</label>
+      <select id="reservations-table-filter" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+        <option value="">Tất cả bàn</option>
+      </select>
+    </div>
+    <div>
+      <label class="mb-1 block text-xs font-bold uppercase tracking-wider text-slate-500">Sắp xếp thời gian</label>
+      <select id="reservations-date-sort" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+        <option value="desc">Mới nhất trước</option>
+        <option value="asc">Cũ nhất trước</option>
+      </select>
+    </div>
+  </div>
+
   <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
       <table class="w-full text-left">
