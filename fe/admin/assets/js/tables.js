@@ -1,6 +1,7 @@
 const tablesState = {
   tables: [],
   query: '',
+  statusFilter: '',
   page: 1,
   pageSize: 10
 };
@@ -24,6 +25,19 @@ function bindTablesEvents() {
   if (addTableButton) {
     addTableButton.addEventListener('click', () => openTableModal());
   }
+
+  // Status filter buttons
+  document.querySelectorAll('.table-filter-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.table-filter-btn').forEach((b) => {
+        b.classList.remove('active', 'ring-2', 'ring-offset-1', 'ring-primary', 'scale-105');
+      });
+      btn.classList.add('active', 'ring-2', 'ring-offset-1', 'ring-primary', 'scale-105');
+      tablesState.statusFilter = btn.dataset.status || '';
+      tablesState.page = 1;
+      renderTables();
+    });
+  });
 }
 
 async function loadTables() {
@@ -54,8 +68,12 @@ function renderTableStats() {
 
 function getFilteredTables() {
   return tablesState.tables.filter((table) => {
+    // Text search
     const haystack = [table.name, table.description, table.status].join(' ').toLowerCase();
-    return !tablesState.query || haystack.includes(tablesState.query);
+    const matchesQuery = !tablesState.query || haystack.includes(tablesState.query);
+    // Status filter
+    const matchesStatus = !tablesState.statusFilter || table.status === tablesState.statusFilter;
+    return matchesQuery && matchesStatus;
   });
 }
 

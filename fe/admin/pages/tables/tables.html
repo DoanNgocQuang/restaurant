@@ -25,6 +25,14 @@
     </div>
   </div>
 
+  <div id="tables-status-filter" class="flex flex-wrap items-center gap-3">
+    <span class="text-sm font-semibold text-slate-500 dark:text-slate-400">Lọc trạng thái:</span>
+    <button data-status="" class="table-filter-btn active rounded-full border border-slate-200 bg-white px-4 py-1.5 text-sm font-bold text-slate-700 shadow-sm transition-all hover:shadow-md dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200">Tất cả</button>
+    <button data-status="AVAILABLE" class="table-filter-btn rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm font-bold text-emerald-700 shadow-sm transition-all hover:shadow-md dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">Khả dụng</button>
+    <button data-status="RESERVED" class="table-filter-btn rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-sm font-bold text-amber-700 shadow-sm transition-all hover:shadow-md dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400">Đã đặt</button>
+    <button data-status="OCCUPIED" class="table-filter-btn rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-bold text-blue-700 shadow-sm transition-all hover:shadow-md dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Đang dùng</button>
+  </div>
+
   <div id="tables-grid" class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3"></div>
   <div id="tables-pagination" class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800"></div>
 </div>
