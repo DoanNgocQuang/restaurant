@@ -24,7 +24,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
         FROM invoice i
         LEFT JOIN booking b ON b.id = i.booking_id
         LEFT JOIN payment p ON p.invoice_id = i.id
+        LEFT JOIN orders o ON o.booking_id = b.id
         WHERE i.created_at BETWEEN :start AND :end
+        AND o.status = 'CONFIRMED'
         GROUP BY DATE_FORMAT(i.created_at, '%Y-%m')
         ORDER BY month
     """, nativeQuery = true)

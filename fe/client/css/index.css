@@ -2,9 +2,10 @@
 
 @theme {
   --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
-  --color-primary: #800020;
-  --color-bg-dark: #230f14;
-  --color-bg-light: #f8f5f6;
+  --color-primary: #c8102e;
+  --color-secondary: #ffd700;
+  --color-bg-dark: #1a0f0f;
+  --color-bg-light: #fefefe;
 }
 
 @layer base {
@@ -16,6 +17,45 @@
 @layer components {
   .glass-panel {
     @apply bg-bg-dark/80 backdrop-blur-md border border-primary/20;
+  }
+
+  .elegant-card {
+    @apply bg-white dark:bg-bg-dark rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-slate-200 dark:border-primary/20;
+  }
+
+  .elegant-button {
+    @apply bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105;
+  }
+
+  .secondary-text {
+    @apply text-secondary;
+  }
+
+  .secondary-bg {
+    @apply bg-secondary;
+  }
+
+  .fade-in-up {
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .gradient-bg {
+    background: linear-gradient(135deg, #c8102e 0%, #b22222 50%, #ffd700 100%);
+  }
+
+  .glass-effect {
+    @apply bg-white/10 backdrop-blur-lg border border-white/20;
   }
 }
 

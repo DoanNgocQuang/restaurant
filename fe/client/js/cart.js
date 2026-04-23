@@ -91,6 +91,7 @@ function renderCart() {
 
   container.innerHTML = cartItems.map((item) => `
     <div class="flex items-center gap-6 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl backdrop-blur transition hover:bg-white/10">
+      <img src="${item.imageUrl || '/images/placeholder.jpg'}" class="h-16 w-16 rounded-xl object-cover shadow-md" alt="${item.name}"/>
       <div class="flex-1">
         <h3 class="text-lg font-bold text-white">${item.name}</h3>
         <p class="text-slate-400">${formatCurrency(item.price)}</p>
