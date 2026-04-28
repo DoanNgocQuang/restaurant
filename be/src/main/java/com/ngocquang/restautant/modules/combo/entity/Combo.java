@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.List;
 
+import com.ngocquang.restautant.modules.comment.entity.Comment;
 import com.ngocquang.restautant.modules.order.entity.OrderDetail;
 
 @Entity
@@ -46,5 +47,8 @@ public class Combo {
 
      @OneToMany(mappedBy = "combo")
      private List<OrderDetail> orderDetails;
+
+     @OneToMany(mappedBy = "combo")
+     private List<Comment> comments;
 
 }

@@ -7,6 +7,7 @@ const routes = {
   '#reservations': { url: './pages/reservations/reservations.html', init: initReservations },
   '#vouchers': { url: './pages/vouchers/vouchers.html', init: initVouchers },
   '#orders': { url: './pages/orders/orders.html', init: initOrders },
+  '#comments': { url: './pages/comments/comments.html', init: window.initComments },
   '#stats-month': { url: './pages/statistics/revenue.html', init: window.initStatsMonth },
   '#stats-dishes': { url: './pages/statistics/best-selling.html', init: window.initStatsDishes },
   '#stats-hours': { url: './pages/statistics/customers-by-hour.html', init: window.initStatsHours },
@@ -91,7 +92,7 @@ function toggleSearchVisibility(hash) {
   const searchContainer = document.getElementById('global-search-container');
   if (!searchContainer) return;
 
-  const managementRoutes = ['#dishes', '#combos', '#customers', '#tables', '#reservations', '#vouchers', '#orders', '#history'];
+  const managementRoutes = ['#dishes', '#combos', '#customers', '#tables', '#reservations', '#vouchers', '#orders', '#history', '#comments'];
   if (managementRoutes.includes(hash)) {
     searchContainer.style.opacity = '1';
     searchContainer.style.pointerEvents = 'auto';
