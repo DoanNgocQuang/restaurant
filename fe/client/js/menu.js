@@ -1,4 +1,5 @@
 import { renderNavbar, renderFooter } from '../components/index.js';
+import { renderCommentSection } from './comments.js';
 
 const API = 'http://localhost:8080/api';
 
@@ -152,6 +153,7 @@ async function renderFoodDetail(id) {
           </div>
         </div>
       </div>
+      <div id="comments-section"></div>
     `;
 
     get('add').onclick = () => {
@@ -166,6 +168,9 @@ async function renderFoodDetail(id) {
     };
 
     get('back').onclick = () => renderFoodList(food.category?.name || '');
+
+    // Render comments section
+    await renderCommentSection(food.id);
   } catch (error) {
     el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải chi tiết món ăn'}</p>`;
   }
@@ -223,6 +228,7 @@ async function renderComboDetail(id) {
           </button>
         </div>
       </div>
+      <div id="comments-section"></div>
     `;
 
     get('add').onclick = () => {
@@ -237,6 +243,9 @@ async function renderComboDetail(id) {
     };
 
     get('back').onclick = renderComboList;
+
+    // Render comments section for combo
+    await renderCommentSection(combo.id, 'combo');
   } catch (error) {
     el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải chi tiết combo'}</p>`;
   }
