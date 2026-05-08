@@ -44,4 +44,20 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
         List<Booking> findConfirmedBookingsByTableAndTime(
                         @Param("tableId") Integer tableId,
                         @Param("now") LocalDateTime now);
+
+        @Query(value = """
+                SELECT
+                    HOUR(b.booking_time) AS hourOfDay,
+                    COUNT(b.id) AS totalBookings,
+                    COALESCE(SUM(b.guest_count), 0) AS totalGuests
+                FROM booking b
+                WHERE b.status IN ('PENDING', 'CONFIRMED')
+                AND MONTH(b.booking_time) = :month
+                AND YEAR(b.booking_time) = :year
+                GROUP BY HOUR(b.booking_time)
+                ORDER BY hourOfDay
+            """, nativeQuery = true)
+        List<Object[]> getBookingStatsByHour(
+                        @Param("month") int month,
+                        @Param("year") int year);
 }

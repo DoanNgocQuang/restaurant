@@ -241,18 +241,13 @@ async function renderStatsHours() {
   const monthInput = document.getElementById('stats-hours-month');
   const filterMonth = monthInput ? monthInput.value : null;
 
-  try {
-    const bookings = await window.AdminApp.request('/bookings');
-    let items = Array.isArray(bookings) ? bookings : [];
+  if (!filterMonth) return;
 
-    // Filter by selected month if provided
-    if (filterMonth) {
-      const [filterYear, filterMon] = filterMonth.split('-').map(Number);
-      items = items.filter((booking) => {
-        const d = new Date(booking.bookingTime);
-        return !Number.isNaN(d.getTime()) && d.getFullYear() === filterYear && (d.getMonth() + 1) === filterMon;
-      });
-    }
+  const [year, month] = filterMonth.split('-').map(Number);
+
+  try {
+    const data = await window.AdminApp.request(`/statistics/bookings/by-hour?month=${month}&year=${year}`);
+    const items = Array.isArray(data) ? data : [];
 
     if (items.length === 0) {
       tbody.innerHTML = window.AdminApp.renderTableMessage(4, 'Chưa có booking để thống kê trong khoảng thời gian này.');
@@ -260,61 +255,41 @@ async function renderStatsHours() {
       return;
     }
 
-    const grouped = items.reduce((accumulator, booking) => {
-      const bookingDate = new Date(booking.bookingTime);
-      const hour = Number.isNaN(bookingDate.getTime()) ? -1 : bookingDate.getHours();
-      if (hour === -1) return accumulator;
-
-      const hourLabel = `${String(hour).padStart(2, '0')}:00 - ${String((hour + 1) % 24).padStart(2, '0')}:00`;
-
-      if (!accumulator[hourLabel]) {
-        accumulator[hourLabel] = {
-          hour: hour,
-          bookings: 0,
-          guests: 0
-        };
-      }
-
-      accumulator[hourLabel].bookings += 1;
-      accumulator[hourLabel].guests += Number(booking.guestCount || 0);
-      return accumulator;
-    }, {});
-
-    const sortedEntries = Object.entries(grouped)
-      .sort(([, a], [, b]) => a.hour - b.hour);
-
     // Find peak hour
     let peakHour = '';
     let peakGuests = 0;
-    sortedEntries.forEach(([hour, item]) => {
-      if (item.guests > peakGuests) {
-        peakGuests = item.guests;
-        peakHour = hour;
+    items.forEach((item) => {
+      if (item.totalGuests > peakGuests) {
+        peakGuests = item.totalGuests;
+        peakHour = item.hourLabel;
       }
     });
 
-    tbody.innerHTML = sortedEntries
-      .map(([hour, item]) => {
-        const isPeak = hour === peakHour;
+    tbody.innerHTML = items
+      .map((item) => {
+        const isPeak = item.hourLabel === peakHour;
         const rowHighlight = isPeak ? 'bg-amber-50 dark:bg-amber-900/10' : '';
         const peakBadge = isPeak ? ' <span class="ml-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"><span class="material-symbols-outlined text-xs">local_fire_department</span>Cao điểm</span>' : '';
 
         return `
           <tr class="${rowHighlight} hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">${window.AdminApp.escapeHtml(hour)}${peakBadge}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatNumber(item.bookings)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatNumber(item.guests)}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600 dark:text-green-400">${(item.guests / item.bookings).toFixed(1)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-white">${window.AdminApp.escapeHtml(item.hourLabel)}${peakBadge}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatNumber(item.totalBookings)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${window.AdminApp.formatNumber(item.totalGuests)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-green-600 dark:text-green-400">${item.avgGuestsPerBooking}</td>
           </tr>
         `;
       }).join('');
 
+    // Convert to sortedEntries format for chart compatibility
+    const sortedEntries = items.map((item) => [item.hourLabel, { hour: item.hour, bookings: item.totalBookings, guests: item.totalGuests }]);
     renderHoursChart(sortedEntries);
   } catch (error) {
     tbody.innerHTML = window.AdminApp.renderTableMessage(4, error.message || 'Không thể tải thống kê khung giờ.', 'error');
     renderHoursChart([]);
   }
 }
+
 
 function renderHoursChart(sortedEntries) {
   const canvas = document.getElementById('hoursChart');
