@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import com.ngocquang.restautant.modules.category.entity.Category;
+import com.ngocquang.restautant.modules.comment.entity.Comment;
 import com.ngocquang.restautant.modules.order.entity.OrderDetail;
 
 @Entity
@@ -44,6 +45,9 @@ public class Food {
 
     @OneToMany(mappedBy = "food")
     private List<OrderDetail> orderDetails;
+
+    @OneToMany(mappedBy = "food")
+    private List<Comment> comments;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="category_id", nullable = false)

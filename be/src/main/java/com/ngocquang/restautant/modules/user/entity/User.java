@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.ngocquang.restautant.modules.booking.entity.Booking;
+import com.ngocquang.restautant.modules.comment.entity.Comment;
 import com.ngocquang.restautant.modules.systemlog.entity.SystemLog;
 import com.ngocquang.restautant.modules.voucher.entity.VoucherDetail;
 
@@ -57,5 +58,8 @@ public class User {
 
     @OneToMany(mappedBy = "user")
     private List<Booking> bookings;
+
+    @OneToMany(mappedBy = "user")
+    private List<Comment> comments;
 
 }
