@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đặt Bàn | L'Élite Gourmet</title>
+    <link rel="stylesheet" href="/css/index.css">
+  </head>
+  <body>
+    <div id="navbar-container"></div>
+    
+    <main class="relative flex flex-col items-center justify-center min-h-screen w-full overflow-hidden">
+      <!-- Background -->
+      <div class="absolute inset-0 z-0">
+        <div class="absolute inset-0 bg-gradient-to-b from-bg-dark/60 via-bg-dark/90 to-bg-dark z-10"></div>
+        <div 
+          class="w-full h-full bg-center bg-cover"
+          style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAC8scUiQvEuYp1y_vsK9sq9t5LP_y91brrfkVDNsHZsZfCumZa4TMfYflSXkd5sXlch7gR849GuvL3bdzXCJ3rl_VnMFku8FCySspCweH4Yw-3jnsYvFeSSGXqoezMA9Ny9zKdmYftB1RQIZa-9DruYbtBJyF3BgKoydPTQtcy7aBXB3JMcLu7yhNvcXPZWvIRQkvCgtRV2LWTNO48WO3LAkYrIbDVv3IAEc8mgDSDWQPoQbRDhyg6JQYrxXcrmQtAmGgF_o4odCOH')"
+        ></div>
+      </div>
+
+      <div class="relative z-20 w-full max-w-4xl px-6 py-12">
+        <div class="text-center mb-10">
+          <h2 class="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">Đặt Chỗ Ngay</h2>
+          <p class="text-slate-400 text-lg max-w-xl mx-auto">
+            Đắm mình trong một hành trình ẩm thực khó quên. Đội ngũ đầu bếp của chúng tôi đã sẵn sàng để đánh thức mọi giác quan của bạn.
+          </p>
+        </div>
+
+        <div class="bg-bg-dark/80 backdrop-blur-md border border-primary/20 rounded-xl p-8 md:p-12 shadow-2xl animate-fade-in-up" id="reservation-container">
+          <!-- Injected by JS -->
+        </div>
+      </div>
+    </main>
+
+    <div id="footer-container"></div>
+    <script type="module" src="/js/reservations.js"></script>
+  </body>
+</html>

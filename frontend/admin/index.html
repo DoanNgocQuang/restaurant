@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Restaurant Admin Dashboard</title>
+
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;500;600;700;900&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#800020",
+            "background-light": "#f8f5f6",
+            "background-dark": "#230f14",
+          },
+          fontFamily: {
+            "display": ["Work Sans", "sans-serif"]
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="assets/css/tailwind.css" />
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar Navigation -->
+    <div id="sidebar-container" class="h-full"></div>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header -->
+      <div id="navbar-container"></div>
+
+      <!-- Dynamic Page Content -->
+      <div id="app-content" class="flex-1 overflow-y-auto hidden">
+        <!-- JS will inject page content here -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Global Modal Container -->
+  <div id="modal-container"></div>
+
+  <!-- Scripts -->
+  <script src="assets/js/shared.js"></script>
+  <script src="assets/js/pagination.js"></script>
+  <script src="assets/js/modal.js"></script>
+  <script src="assets/js/sidebar.js"></script>
+  <script src="assets/js/dashboard.js"></script>
+  <script src="assets/js/foods.js"></script>
+  <script src="assets/js/combos.js"></script>
+  <script src="assets/js/customers.js"></script>
+  <script src="assets/js/tables.js"></script>
+  <script src="assets/js/reservations.js"></script>
+  <script src="assets/js/vouchers.js"></script>
+  <script src="assets/js/orders.js"></script>
+  <script src="assets/js/admin-comments.js"></script>
+  <script src="assets/js/statistics.js"></script>
+  <script src="assets/js/system-log.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,27 @@
+/* 
+ * File CSS thuần.
+ * Tailwind CSS đã được nhúng trực tiếp qua thẻ <script src="https://cdn.tailwindcss.com"> trong file HTML.
+ * Bạn có thể viết thêm các CSS tùy chỉnh (custom CSS) của dự án Java vào đây.
+ */
+
+body {
+    /* Ví dụ: Thêm CSS tùy chỉnh nếu cần */
+}
+
+/* Custom Scrollbar cho Sidebar tối màu */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #334155; /* slate-700 */
+  border-radius: 10px;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: #475569; /* slate-600 */
+}
