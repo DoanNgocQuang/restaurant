@@ -16,7 +16,7 @@ Dự án áp dụng kiến trúc Multi-Page App (MPA) để đảm bảo không 
 Đảm bảo đã clone dự án về máy tính và truy cập vào dự án bằng IDE VScode/Intellij
 
 ### 2. Các bước chạy dự án
-Sau khi đã chạy phần Backend, mở Terminal và chạy lần lượt các lệnh sau:
+Sau khi đã chạy phần Backend( nhớ sửa tên và passwd mysql trong file application.properties theo của b nhé), mở Terminal và chạy lần lượt các lệnh sau:
 ****
 ```bash
 Bước 1: Cài đặt thư viện (Dependencies):

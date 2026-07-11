@@ -54,19 +54,22 @@ public class UserService {
 
         // Case 1: User cập nhật thông tin cá nhân của chính mình
         if (currentUser.getId().equals(id)) {
-            // Người dùng chỉ được update fullname, phone, email
-            if (request.getFullname() != null && !request.getFullname().trim().isEmpty()) {
-                userToUpdate.setFullname(request.getFullname());
+            // Người dùng chỉ được update fullname, phone, email và các trường này không được để trống
+            if (request.getFullname() == null || request.getFullname().trim().isEmpty()) {
+                throw new BadRequestException("Fullname is required");
             }
+            if (request.getPhone() == null || request.getPhone().trim().isEmpty()) {
+                throw new BadRequestException("Phone is required");
+            }
+
+            userToUpdate.setFullname(request.getFullname());
             if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
                 userToUpdate.setEmail(request.getEmail());
             }
-            if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
-                userToUpdate.setPhone(request.getPhone());
-            }
+            userToUpdate.setPhone(request.getPhone());
         }
         // Case 2: Admin thay đổi trạng thái của tài khoản
-        else if (currentUser.getRole().equals("ADMIN")) {
+        else if (currentUser.getRole() == User.Role.ADMIN) {
             // Admin chỉ được update isActive
             if (request.getIsActive() != null) {
                 userToUpdate.setIs_active(request.getIsActive());
