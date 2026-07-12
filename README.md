@@ -1,38 +1,129 @@
-# 🍽️ L'Élite Gourmet - Frontend Project
+# L'Élite Gourmet - Restaurant Website
 
-Dự án giao diện website nhà hàng cao cấp L'Élite Gourmet. Dự án sử dụng **Vite** để quản lý môi trường phát triển, bao gồm hai phần giao diện tách biệt: Trang dành cho Khách hàng và Trang Quản trị (Admin Dashboard).
+Dự án website nhà hàng L'Élite Gourmet, gồm giao diện khách hàng, trang quản trị và backend API. Frontend được tổ chức theo mô hình Multi-Page Application (MPA) để tách riêng khu vực khách hàng và quản trị.
 
-## 📂 Cấu trúc dự án nổi bật
+## Công nghệ sử dụng
 
-Dự án áp dụng kiến trúc Multi-Page App (MPA) để đảm bảo không xung đột tài nguyên giữa các khu vực:
+- **Ngôn ngữ:** Java (Spring Boot), JavaScript, TypeScript
+- **Styling:** CSS, Tailwind CSS v4
+- **Data access:** Spring Data JPA, Hibernate
+- **Security:** Spring Security, JWT
+- **Database:** MariaDB / MySQL
+- **Build tool:** Vite, Maven
 
-- **`/backend` (Thư mục gốc):** Chứa code của backend. (Spring Boot)
-- **`/frontend/client`:** Chứa HTML, CSS, JS của giao diện khách hàng (Trang chủ, Menu, Giỏ hàng, Đặt bàn,...).
-- **`/frontend/admin`:** Chứa toàn bộ giao diện và tài nguyên (assets) độc lập của phân hệ Quản trị viên.
-- **`/database`:** Chứa dữ liệu của CSDL (restaurant.sql)
+### DevOps
 
-## 🚀 Hướng dẫn cài đặt và chạy dự án (Local)
+- **Container:** Docker, Docker Compose
+- **Web server:** Nginx
+- **CI/CD:** Jenkins, GitLab CI/CD
 
-### 1. Yêu cầu hệ thống (Prerequisites)
+## Cấu trúc dự án
 
-Đảm bảo máy tính của bạn đã cài đặt sẵn [Node.js](https://nodejs.org/).
-Đảm bảo bạn đã tạo 1 CSDL có tên là restaurant trong MYSQL
-Đảm bảo đã clone dự án về máy tính và truy cập vào dự án bằng IDE VScode/Intellij
+```text
+restaurant/
+├── backend/            # Source code backend Spring Boot
+├── database/           # Dữ liệu hoặc script liên quan đến CSDL
+├── frontend/
+│   ├── admin/          # Giao diện quản trị
+│   └── client/         # Giao diện khách hàng
+├── docker-compose.yml  # Cấu hình chạy production bằng Docker Compose
+├── Jenkinsfile         # Cấu hình Jenkins CI/CD
+└── gitlab-ci.yml       # Cấu hình GitLab CI/CD
+```
 
-### 2. Các bước chạy dự án
+## Chạy dự án local
 
-## Sau khi đã chạy phần Backend( nhớ sửa tên và passwd mysql trong file application.properties theo của b nhé), mở Terminal và chạy lần lượt các lệnh sau:
+### Yêu cầu hệ thống
+
+- Cài đặt [Node.js](https://nodejs.org/)
+- Cài đặt JDK 25
+- Cài đặt MySQL hoặc MariaDB
+- Tạo database tên `restaurant`
+- Clone dự án về máy và mở bằng VS Code, IntelliJ IDEA hoặc IDE tương đương
+
+### Cấu hình backend
+
+Mở file `backend/src/main/resources/application.properties`, sau đó chỉnh thông tin kết nối database theo máy của bạn:
+
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/restaurant
+spring.datasource.username=<MYSQL_USERNAME>
+spring.datasource.password=<MYSQL_PASSWORD>
+```
+
+### Khởi động backend
 
 ```bash
-Bước 1: Cài đặt thư viện (Dependencies):
+cd backend
+./mvnw spring-boot:run
+```
+
+Trên Windows có thể dùng:
+
+```bash
+cd backend
+mvnw.cmd spring-boot:run
+```
+
+Backend API chạy tại:
+
+```text
+http://localhost:8080
+```
+
+### Khởi động frontend
+
+Mở terminal khác và chạy:
+
+```bash
 cd frontend/client
 npm install
-Bước 2: Khởi động Dev Server:
 npm run dev
-🌐 Đường dẫn truy cập (Local URLs)
-Sau khi Dev Server khởi động thành công , bạn có thể truy cập qua trình duyệt:
-
-Trang Khách hàng (Client): http://localhost:3000/
-
-Trang Quản trị (Admin): http://localhost:3000/admin/
 ```
+
+Sau khi dev server khởi động thành công, truy cập:
+
+- **Trang khách hàng:** `http://localhost:3000/`
+- **Trang quản trị:** `http://localhost:3000/admin/`
+
+## Triển khai production bằng Docker
+
+### Yêu cầu
+
+- Cài đặt [Docker](https://docs.docker.com/engine/install/)
+- Cài đặt [Docker Compose](https://docs.docker.com/compose/install/)
+
+### Các bước chạy
+
+Clone mã nguồn về server Linux, di chuyển vào thư mục gốc của dự án rồi chạy:
+
+```bash
+docker compose up -d --build
+```
+
+Kiểm tra trạng thái container:
+
+```bash
+docker compose ps
+```
+
+Xem log:
+
+```bash
+docker compose logs -f
+```
+
+Sau khi chạy thành công, các dịch vụ hoạt động tại:
+
+- **Frontend Client & Admin:** `http://<IP_SERVER>` hoặc `http://localhost`
+- **Backend API:** `http://<IP_SERVER>:8080`
+- **Database MariaDB:** `<IP_SERVER>:3306`
+
+## CI/CD
+
+Dự án có sẵn các file cấu hình CI/CD:
+
+- `Jenkinsfile`: cấu hình pipeline cho Jenkins
+- `gitlab-ci.yml`: cấu hình pipeline cho GitLab CI/CD
+
+Bạn có thể tùy chỉnh các file này theo môi trường triển khai thực tế.
