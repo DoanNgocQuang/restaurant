@@ -20,7 +20,7 @@ services:
       - my-network
 
   be:
-    image: ${REGISTRY_URL}/${REGISTRY_PROJECT}/restaurant-be:${IMAGE_TAG}
+    image: ${REGISTRY_URL}/${REGISTRY_USER}/${REGISTRY_PROJECT}-be:${IMAGE_TAG}
     build: ./backend
     container_name: mybe
     environment:
@@ -36,7 +36,7 @@ services:
       - my-network
 
   fe:
-    image: ${REGISTRY_URL}/${REGISTRY_PROJECT}/restaurant-fe:${IMAGE_TAG}
+    image: ${REGISTRY_URL}/${REGISTRY_USER}/${REGISTRY_PROJECT}-fe:${IMAGE_TAG}
     build: ./frontend
     container_name: myfe
     ports:
