@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   mysql:
     image: mariadb:11.4
@@ -22,6 +20,7 @@ services:
       - my-network
 
   be:
+    image: ${REGISTRY_URL}/${REGISTRY_PROJECT}/restaurant-be:${IMAGE_TAG}
     build: ./backend
     container_name: mybe
     environment:
@@ -37,6 +36,7 @@ services:
       - my-network
 
   fe:
+    image: ${REGISTRY_URL}/${REGISTRY_PROJECT}/restaurant-fe:${IMAGE_TAG}
     build: ./frontend
     container_name: myfe
     ports:
