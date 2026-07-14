@@ -19,6 +19,11 @@ COPY --from=build /app/client/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/nginx.conf
 
 RUN chown -R restaurant:restaurant /usr/share/nginx/html
+RUN mkdir -p /var/cache/nginx \
+    && chown -R restaurant:restaurant /var/cache/nginx \
+    && chown -R restaurant:restaurant /var/run \
+    && chown -R restaurant:restaurant /etc/nginx
+    
 USER restaurant
 
 EXPOSE 80
