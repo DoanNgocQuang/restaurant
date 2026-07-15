@@ -14,7 +14,7 @@ RUN cd client && npm run build
 FROM nginx:alpine
 
 COPY --from=build /app/client/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 80
 
