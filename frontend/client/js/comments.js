@@ -1,5 +1,5 @@
 // Comments Module for Client
-const API = 'http://localhost:8080/api';
+const API = '/api';
 
 const getToken = () => localStorage.getItem('token');
 const getUserId = () => JSON.parse(localStorage.getItem('user')).id;

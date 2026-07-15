@@ -1,6 +1,6 @@
 ﻿import { renderNavbar, renderFooter } from "../components/index.js";
 
-const API = "http://localhost:8080/api";
+const API = "/api";
 const HISTORY_PAGE_SIZE = 5;
 
 let activeTab = "reservations";
@@ -140,7 +140,9 @@ function renderHistorySortControls(type, sortConfig, options) {
                 <option value="asc" ${sortConfig.createdOrder === "asc" ? "selected" : ""}>Tăng dần</option>
               </select>
             </label>
-            ${showUsageSort ? `
+            ${
+              showUsageSort
+                ? `
             <label class="block text-sm">
               <span class="mb-1 block text-slate-500">${usageLabel}</span>
               <select
@@ -152,7 +154,9 @@ function renderHistorySortControls(type, sortConfig, options) {
                 <option value="asc" ${sortConfig.usageOrder === "asc" ? "selected" : ""}>Tăng dần</option>
               </select>
             </label>
-            ` : ""}
+            `
+                : ""
+            }
           </div>
         </div>
       </details>
@@ -294,7 +298,6 @@ function attachPaginationEvents() {
     });
   });
 }
-
 
 async function updateProfileHeader() {
   if (!currentUser) return;
@@ -467,7 +470,11 @@ function renderProfileContent() {
     }
   } else if (activeTab === "orders") {
     const sortedOrders = [...currentUserOrders].sort((first, second) =>
-      compareDateValues(first?.createdAt, second?.createdAt, orderSort.createdOrder),
+      compareDateValues(
+        first?.createdAt,
+        second?.createdAt,
+        orderSort.createdOrder,
+      ),
     );
     const pagedOrders = paginateItems(sortedOrders, orderPage);
     orderPage = pagedOrders.currentPage;

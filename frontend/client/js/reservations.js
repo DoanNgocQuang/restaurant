@@ -1,6 +1,6 @@
 import { renderNavbar, renderFooter } from "../components/index.js";
 
-const API = "http://localhost:8080/api";
+const API = "/api";
 
 let step = 1;
 let searchParams = { date: "", time: "", guests: 2 };

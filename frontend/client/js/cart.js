@@ -1,6 +1,6 @@
 import { renderNavbar, renderFooter } from '../components/index.js';
 
-const API = 'http://localhost:8080/api';
+const API = '/api';
 
 function getImageUrl(url) {
   if (!url) return '/images/placeholder.jpg';

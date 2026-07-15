@@ -1,32 +1,36 @@
-import { renderNavbar, renderFooter } from '../components/index.js';
+import { renderNavbar, renderFooter } from "../components/index.js";
 
-const API = 'http://localhost:8080/api';
+const API = "/api";
 
 function getImageUrl(url) {
-  if (!url) return 'https://placehold.co/600x400?text=No+Image';
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+  if (!url) return "https://placehold.co/600x400?text=No+Image";
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("data:")
+  ) {
     return url;
   }
-  const backendHost = API.replace('/api', '');
-  return `${backendHost}${url.startsWith('/') ? '' : '/'}${url}`;
+  const backendHost = API.replace("/api", "");
+  return `${backendHost}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
 function formatCurrencyHome(value) {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
   }).format(Number(value || 0));
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   renderNavbar();
   renderFooter();
 
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 
   // Hero Actions
-  const heroActions = document.getElementById('hero-actions');
+  const heroActions = document.getElementById("hero-actions");
   if (heroActions) {
     if (isLoggedIn) {
       heroActions.innerHTML = `
@@ -50,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // CTA Actions
-  const ctaActions = document.getElementById('cta-actions');
+  const ctaActions = document.getElementById("cta-actions");
   if (ctaActions) {
     if (isLoggedIn) {
       ctaActions.innerHTML = `
@@ -70,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Dishes — fetch from API
-  const dishesContainer = document.getElementById('dishes-container');
+  const dishesContainer = document.getElementById("dishes-container");
   if (dishesContainer) {
     loadFeaturedDishes(dishesContainer);
   }
@@ -78,7 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadFeaturedDishes(container) {
   // Show loading skeleton
-  container.innerHTML = Array.from({ length: 6 }, () => `
+  container.innerHTML = Array.from(
+    { length: 6 },
+    () => `
     <div class="animate-pulse rounded-xl bg-white dark:bg-bg-dark border border-primary/10 overflow-hidden">
       <div class="h-64 bg-slate-200 dark:bg-slate-700"></div>
       <div class="p-6 space-y-3">
@@ -87,21 +93,25 @@ async function loadFeaturedDishes(container) {
         <div class="h-4 w-1/2 rounded bg-slate-200 dark:bg-slate-700"></div>
       </div>
     </div>
-  `).join('');
+  `,
+  ).join("");
 
   try {
     const response = await fetch(`${API}/foods`);
     const json = await response.json();
     const foods = (json?.data || [])
-      .filter(food => food.status === 'AVAILABLE')
+      .filter((food) => food.status === "AVAILABLE")
       .slice(0, 6);
 
     if (foods.length === 0) {
-      container.innerHTML = '<p class="col-span-full text-center text-slate-500">Hiện chưa có món ăn nào.</p>';
+      container.innerHTML =
+        '<p class="col-span-full text-center text-slate-500">Hiện chưa có món ăn nào.</p>';
       return;
     }
 
-    container.innerHTML = foods.map(food => `
+    container.innerHTML = foods
+      .map(
+        (food) => `
       <div class="group relative overflow-hidden rounded-xl bg-white dark:bg-bg-dark border border-primary/10 transition-transform duration-300 hover:-translate-y-2">
         <div class="h-64 overflow-hidden">
           <img 
@@ -117,16 +127,19 @@ async function loadFeaturedDishes(container) {
             <h4 class="text-xl font-bold">${food.name}</h4>
             <span class="text-primary font-black whitespace-nowrap ml-2">${formatCurrencyHome(food.price)}</span>
           </div>
-          <p class="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">${food.description || ''}</p>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">${food.description || ""}</p>
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">${food.category?.name || ''}</span>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">${food.category?.name || ""}</span>
             <a href="/pages/menu.html" class="text-primary text-sm font-bold hover:underline">Xem thêm →</a>
           </div>
         </div>
       </div>
-    `).join('');
+    `,
+      )
+      .join("");
   } catch (error) {
-    console.error('Failed to load featured dishes:', error);
-    container.innerHTML = '<p class="col-span-full text-center text-red-500">Không thể tải món ăn. Vui lòng thử lại sau.</p>';
+    console.error("Failed to load featured dishes:", error);
+    container.innerHTML =
+      '<p class="col-span-full text-center text-red-500">Không thể tải món ăn. Vui lòng thử lại sau.</p>';
   }
 }

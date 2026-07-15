@@ -1,21 +1,25 @@
-import { renderNavbar, renderFooter } from '../components/index.js';
-import { renderCommentSection } from './comments.js';
+import { renderNavbar, renderFooter } from "../components/index.js";
+import { renderCommentSection } from "./comments.js";
 
-const API = 'http://localhost:8080/api';
+const API = "/api";
 
 function getImageUrl(url) {
-  if (!url) return '/images/placeholder.jpg';
-  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+  if (!url) return "/images/placeholder.jpg";
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("data:")
+  ) {
     return url;
   }
-  const backendHost = API.replace('/api', '');
-  return `${backendHost}${url.startsWith('/') ? '' : '/'}${url}`;
+  const backendHost = API.replace("/api", "");
+  return `${backendHost}${url.startsWith("/") ? "" : "/"}${url}`;
 }
 
-const getToken = () => localStorage.getItem('token');
+const getToken = () => localStorage.getItem("token");
 const get = (id) => document.getElementById(id);
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   renderNavbar();
   renderFooter();
   renderHome();
@@ -24,24 +28,24 @@ document.addEventListener('DOMContentLoaded', () => {
 async function fetchAPI(url) {
   const response = await fetch(url, {
     headers: {
-      'Content-Type': 'application/json',
-      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {})
-    }
+      "Content-Type": "application/json",
+      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+    },
   });
 
   const json = await response.json();
-  if (!response.ok || json?.status === 'error') {
-    throw new Error(json?.message || 'API error');
+  if (!response.ok || json?.status === "error") {
+    throw new Error(json?.message || "API error");
   }
 
   return json.data;
 }
 
 function formatCurrency(value) {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
   }).format(Number(value || 0));
 }
 
@@ -61,7 +65,7 @@ function listItem(title, desc, right, attrName, attrValue) {
     >
       <div>
         <h4 class="text-lg font-bold text-white">${title}</h4>
-        <p class="mt-1 text-sm text-slate-400">${desc || ''}</p>
+        <p class="mt-1 text-sm text-slate-400">${desc || ""}</p>
       </div>
       <span class="text-lg font-semibold text-primary">${right}</span>
     </div>
@@ -69,7 +73,7 @@ function listItem(title, desc, right, attrName, attrValue) {
 }
 
 function renderHome() {
-  const el = get('menu-container');
+  const el = get("menu-container");
 
   el.innerHTML = `
     <div class="grid gap-12 md:grid-cols-2">
@@ -84,12 +88,12 @@ function renderHome() {
     </div>
   `;
 
-  get('btn-category').onclick = renderCategoryList;
-  get('btn-combo').onclick = renderComboList;
+  get("btn-category").onclick = renderCategoryList;
+  get("btn-combo").onclick = renderComboList;
 }
 
 async function renderCategoryList() {
-  const el = get('menu-container');
+  const el = get("menu-container");
 
   try {
     const categories = await fetchAPI(`${API}/categories`);
@@ -97,32 +101,34 @@ async function renderCategoryList() {
     el.innerHTML = `
       ${backBtn()}
       <div class="space-y-4">
-        ${categories.map((category) => listItem(category.name, category.description || '', `${category.foodCount || 0} món`, 'data-name', category.name)).join('')}
+        ${categories.map((category) => listItem(category.name, category.description || "", `${category.foodCount || 0} món`, "data-name", category.name)).join("")}
       </div>
     `;
 
-    el.querySelectorAll('[data-name]').forEach((item) => {
+    el.querySelectorAll("[data-name]").forEach((item) => {
       item.onclick = () => renderFoodList(item.dataset.name);
     });
 
-    get('back').onclick = renderHome;
+    get("back").onclick = renderHome;
   } catch (error) {
-    el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải danh mục'}</p>`;
+    el.innerHTML = `<p class="text-red-500">${error.message || "Lỗi tải danh mục"}</p>`;
   }
 }
 
 async function renderFoodList(categoryName) {
-  const el = get('menu-container');
+  const el = get("menu-container");
 
   try {
-    const foods = await fetchAPI(`${API}/foods?categoryName=${encodeURIComponent(categoryName)}`);
-    const activeFoods = foods.filter((food) => food.status === 'AVAILABLE');
+    const foods = await fetchAPI(
+      `${API}/foods?categoryName=${encodeURIComponent(categoryName)}`,
+    );
+    const activeFoods = foods.filter((food) => food.status === "AVAILABLE");
 
     el.innerHTML = `
       ${backBtn()}
       <h2 class="mb-6 text-3xl font-bold text-white">${categoryName}</h2>
       <div class="space-y-4">
-        ${activeFoods.map((food) => listItem(food.name, food.description, formatCurrency(food.price), 'data-id', food.id)).join('')}
+        ${activeFoods.map((food) => listItem(food.name, food.description, formatCurrency(food.price), "data-id", food.id)).join("")}
       </div>
     `;
 
@@ -130,18 +136,18 @@ async function renderFoodList(categoryName) {
       el.innerHTML += `<p class="mt-6 text-slate-400">Danh mục này hiện chưa có món đang phục vụ.</p>`;
     }
 
-    el.querySelectorAll('[data-id]').forEach((item) => {
+    el.querySelectorAll("[data-id]").forEach((item) => {
       item.onclick = () => renderFoodDetail(item.dataset.id);
     });
 
-    get('back').onclick = renderCategoryList;
+    get("back").onclick = renderCategoryList;
   } catch (error) {
-    el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải món ăn'}</p>`;
+    el.innerHTML = `<p class="text-red-500">${error.message || "Lỗi tải món ăn"}</p>`;
   }
 }
 
 async function renderFoodDetail(id) {
-  const el = get('menu-container');
+  const el = get("menu-container");
 
   try {
     const food = await fetchAPI(`${API}/foods/${id}`);
@@ -152,7 +158,7 @@ async function renderFoodDetail(id) {
         <img src="${getImageUrl(food.imageUrl)}" class="h-[400px] w-full rounded-2xl object-cover shadow-2xl" onerror="this.src='/images/placeholder.jpg'"/>
         <div class="space-y-4">
           <h2 class="text-4xl font-black text-white">${food.name}</h2>
-          <p class="text-slate-300">${food.description || ''}</p>
+          <p class="text-slate-300">${food.description || ""}</p>
           <p class="text-2xl font-bold text-primary">${formatCurrency(food.price)}</p>
           <div class="mt-6 flex items-center gap-4">
             <input id="qty" type="number" value="1" min="1" class="w-20 rounded-lg border border-white/20 bg-black/50 px-3 py-2 text-white"/>
@@ -165,37 +171,37 @@ async function renderFoodDetail(id) {
       <div id="comments-section"></div>
     `;
 
-    get('add').onclick = () => {
+    get("add").onclick = () => {
       addToCart({
-        type: 'FOOD',
+        type: "FOOD",
         itemId: food.id,
         name: food.name,
         price: Number(food.price),
-        quantity: Number(get('qty').value || 1),
-        imageUrl: food.imageUrl
+        quantity: Number(get("qty").value || 1),
+        imageUrl: food.imageUrl,
       });
     };
 
-    get('back').onclick = () => renderFoodList(food.category?.name || '');
+    get("back").onclick = () => renderFoodList(food.category?.name || "");
 
     // Render comments section
     await renderCommentSection(food.id);
   } catch (error) {
-    el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải chi tiết món ăn'}</p>`;
+    el.innerHTML = `<p class="text-red-500">${error.message || "Lỗi tải chi tiết món ăn"}</p>`;
   }
 }
 
 async function renderComboList() {
-  const el = get('menu-container');
+  const el = get("menu-container");
 
   try {
     const combos = await fetchAPI(`${API}/combos`);
-    const activeCombos = combos.filter((combo) => combo.status === 'AVAILABLE');
+    const activeCombos = combos.filter((combo) => combo.status === "AVAILABLE");
 
     el.innerHTML = `
       ${backBtn()}
       <div class="space-y-4">
-        ${activeCombos.map((combo) => listItem(combo.name, combo.description, formatCurrency(combo.price), 'data-id', combo.id)).join('')}
+        ${activeCombos.map((combo) => listItem(combo.name, combo.description, formatCurrency(combo.price), "data-id", combo.id)).join("")}
       </div>
     `;
 
@@ -203,18 +209,18 @@ async function renderComboList() {
       el.innerHTML += `<p class="mt-6 text-slate-400">Hiện chưa có combo đang phục vụ.</p>`;
     }
 
-    el.querySelectorAll('[data-id]').forEach((item) => {
+    el.querySelectorAll("[data-id]").forEach((item) => {
       item.onclick = () => renderComboDetail(item.dataset.id);
     });
 
-    get('back').onclick = renderHome;
+    get("back").onclick = renderHome;
   } catch (error) {
-    el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải combo'}</p>`;
+    el.innerHTML = `<p class="text-red-500">${error.message || "Lỗi tải combo"}</p>`;
   }
 }
 
 async function renderComboDetail(id) {
-  const el = get('menu-container');
+  const el = get("menu-container");
 
   try {
     const combo = await fetchAPI(`${API}/combos/${id}`);
@@ -225,12 +231,16 @@ async function renderComboDetail(id) {
         <img src="${getImageUrl(combo.imageUrl)}" class="h-[400px] w-full rounded-2xl object-cover shadow-2xl" onerror="this.src='/images/placeholder.jpg'"/>
         <div class="space-y-4">
           <h2 class="text-4xl font-black text-white">${combo.name}</h2>
-          <p class="text-slate-300">${combo.description || ''}</p>
+          <p class="text-slate-300">${combo.description || ""}</p>
           <p class="text-2xl font-bold text-primary">${formatCurrency(combo.price)}</p>
           <div class="rounded-xl border border-white/10 bg-black/20 p-4 text-sm text-slate-300">
-            ${(combo.foods || []).length > 0
-              ? combo.foods.map((food) => `<div>${food.foodName}</div>`).join('')
-              : 'Combo này chưa có mô tả món đi kèm.'}
+            ${
+              (combo.foods || []).length > 0
+                ? combo.foods
+                    .map((food) => `<div>${food.foodName}</div>`)
+                    .join("")
+                : "Combo này chưa có mô tả món đi kèm."
+            }
           </div>
           <button id="add" class="mt-6 rounded-xl bg-primary px-6 py-3 font-bold text-black transition-all hover:scale-105">
             Thêm combo
@@ -240,23 +250,23 @@ async function renderComboDetail(id) {
       <div id="comments-section"></div>
     `;
 
-    get('add').onclick = () => {
+    get("add").onclick = () => {
       addToCart({
-        type: 'COMBO',
+        type: "COMBO",
         itemId: combo.id,
         name: combo.name,
         price: Number(combo.price),
         quantity: 1,
-        imageUrl: combo.imageUrl
+        imageUrl: combo.imageUrl,
       });
     };
 
-    get('back').onclick = renderComboList;
+    get("back").onclick = renderComboList;
 
     // Render comments section for combo
-    await renderCommentSection(combo.id, 'combo');
+    await renderCommentSection(combo.id, "combo");
   } catch (error) {
-    el.innerHTML = `<p class="text-red-500">${error.message || 'Lỗi tải chi tiết combo'}</p>`;
+    el.innerHTML = `<p class="text-red-500">${error.message || "Lỗi tải chi tiết combo"}</p>`;
   }
 }
 
@@ -280,8 +290,11 @@ async function addToCart(item) {
     return;
   }
 
-  const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-  const existingIndex = cart.findIndex((cartItem) => cartItem.type === item.type && cartItem.itemId === item.itemId);
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  const existingIndex = cart.findIndex(
+    (cartItem) =>
+      cartItem.type === item.type && cartItem.itemId === item.itemId,
+  );
 
   if (existingIndex > -1) {
     cart[existingIndex].quantity += item.quantity;
@@ -289,6 +302,6 @@ async function addToCart(item) {
     cart.push(item);
   }
 
-  localStorage.setItem('cart', JSON.stringify(cart));
-  alert('Đã thêm vào giỏ hàng.');
+  localStorage.setItem("cart", JSON.stringify(cart));
+  alert("Đã thêm vào giỏ hàng.");
 }
