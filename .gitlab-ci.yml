@@ -42,9 +42,9 @@ showlog:
     GIT_STRATEGY: none
   script:
     - sleep 20
-    - docker ps
-    - docker logs mybe --tail=100
-    - docker logs myfe --tail=100
+    - docker compose ps
+    - docker logs mybe --tail=100 || true
+    - docker logs myfe --tail=100 || true
   tags:
     - lab-server
   only:

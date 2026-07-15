@@ -49,6 +49,7 @@ Mở file `backend/src/main/resources/application.properties`, sau đó chỉnh 
 spring.datasource.url=jdbc:mysql://localhost:3306/restaurant
 spring.datasource.username=<MYSQL_USERNAME>
 spring.datasource.password=<MYSQL_PASSWORD>
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 ```
 
 ### Khởi động backend
