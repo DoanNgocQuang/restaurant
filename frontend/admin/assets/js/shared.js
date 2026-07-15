@@ -1,5 +1,5 @@
 const AdminApp = (() => {
-  const API_BASE = 'http://localhost:8080/api';
+  const API_BASE = '/api';
   const toastRootId = 'admin-toast-root';
   const defaultAvatar = 'https://ui-avatars.com/api/?name=Admin&background=800020&color=fff';
   let globalSearchHandler = null;

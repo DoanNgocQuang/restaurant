@@ -13,8 +13,8 @@ RUN cd client && npm run build
 ## run stage ##
 FROM nginx:alpine
 
-COPY --from=build /app/client/dist /run
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=build /app/client/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
