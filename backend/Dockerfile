@@ -12,16 +12,19 @@ RUN mvn package -DskipTests
 ## run stage ##
 FROM eclipse-temurin:25-jre-alpine
 
-RUN adduser -D restaurant
-RUN apk add --no-cache tzdata
-ENV TZ=Asia/Ho_Chi_Minh
+WORKDIR /app
 
-COPY --from=build /app/target/*.jar /run/app.jar
+RUN adduser -D restaurant \
+    && apk add --no-cache tzdata \
+    && chown restaurant:restaurant /app
 
-RUN chown restaurant:restaurant /run/app.jar
+ENV TZ=Asia/Ho_Chi_Minh \
+    JAVA_TOOL_OPTIONS="-Xmx1024m -Xms256m"
+
+COPY --from=build --chown=restaurant:restaurant /app/target/*.jar app.jar
+
 USER restaurant
 
 EXPOSE 8080
 
-ENV JAVA_TOOL_OPTIONS="-Xmx1024m -Xms256m"
-ENTRYPOINT ["java", "-jar", "/run/app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

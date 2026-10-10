@@ -23,7 +23,8 @@ buildandpush:
 deploy:
   stage: deploy
   variables:
-    GIT_STRATEGY: none
+    GIT_STRATEGY: fetch
+  when: manual
   before_script:
     - docker login ${REGISTRY_URL} -u ${REGISTRY_USER} -p ${REGISTRY_PASSWORD}
   script:
@@ -31,6 +32,8 @@ deploy:
     - docker compose down
     - docker compose up -d --remove-orphans
     - docker image prune -af
+    - sleep 10
+    - docker exec -i mydb mysql -u root -proot restaurant < database/restaurant.sql
   tags:
     - lab-server
   only:
@@ -40,6 +43,7 @@ showlog:
   stage: showlog
   variables:
     GIT_STRATEGY: none
+  when: manual
   script:
     - sleep 20
     - docker compose ps
@@ -49,4 +53,3 @@ showlog:
     - lab-server
   only:
     - tags
-
