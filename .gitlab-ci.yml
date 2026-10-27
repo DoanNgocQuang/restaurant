@@ -13,10 +13,12 @@ buildandpush:
   before_script:
     - printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY_URL" --username "$REGISTRY_USER" --password-stdin
   script:
-    - docker compose build --pull
+    - docker compose build --parallel --pull
     - docker compose push be fe
+  after_script:
+    - docker compose rmi -f be fe
   tags:
-    - lab-server
+    - control
   only:
     - tags
 
@@ -24,18 +26,14 @@ deploy:
   stage: deploy
   variables:
     GIT_STRATEGY: fetch
-  resource_group: restaurant-production
   when: manual
   before_script:
     - printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY_URL" --username "$REGISTRY_USER" --password-stdin
   script:
     - docker compose pull
-    - docker compose up -d --no-build --remove-orphans --wait --wait-timeout 240
-  after_script:
-    - docker compose ps --all
-    - docker compose logs --tail=100 be fe
+    - docker compose up -d --no-build --remove-orphans
   tags:
-    - lab-server
+    - control
   only:
     - tags
 
@@ -48,6 +46,6 @@ showlog:
     - docker compose ps --all
     - docker compose logs --tail=100 be fe
   tags:
-    - lab-server
+    - control
   only:
     - tags
