@@ -11,10 +11,10 @@ buildandpush:
   variables:
     GIT_STRATEGY: clone
   before_script:
-    - docker login ${REGISTRY_URL} -u ${REGISTRY_USER} -p ${REGISTRY_PASSWORD}
+    - printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY_URL" --username "$REGISTRY_USER" --password-stdin
   script:
-    - docker compose build
-    - docker compose push
+    - docker compose build --pull
+    - docker compose push be fe
   tags:
     - lab-server
   only:
@@ -24,16 +24,16 @@ deploy:
   stage: deploy
   variables:
     GIT_STRATEGY: fetch
+  resource_group: restaurant-production
   when: manual
   before_script:
-    - docker login ${REGISTRY_URL} -u ${REGISTRY_USER} -p ${REGISTRY_PASSWORD}
+    - printf '%s' "$REGISTRY_PASSWORD" | docker login "$REGISTRY_URL" --username "$REGISTRY_USER" --password-stdin
   script:
     - docker compose pull
-    - docker compose down
-    - docker compose up -d --remove-orphans
-    - docker image prune -af
-    - sleep 10
-    - docker exec -i mydb mysql -u root -proot restaurant < database/restaurant.sql
+    - docker compose up -d --no-build --remove-orphans --wait --wait-timeout 240
+  after_script:
+    - docker compose ps --all
+    - docker compose logs --tail=100 be fe
   tags:
     - lab-server
   only:
@@ -42,13 +42,11 @@ deploy:
 showlog:
   stage: showlog
   variables:
-    GIT_STRATEGY: none
+    GIT_STRATEGY: fetch
   when: manual
   script:
-    - sleep 20
-    - docker compose ps
-    - docker logs mybe --tail=100 || true
-    - docker logs myfe --tail=100 || true
+    - docker compose ps --all
+    - docker compose logs --tail=100 be fe
   tags:
     - lab-server
   only:

@@ -4,14 +4,25 @@ services:
     restart: unless-stopped
     container_name: mydb
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: restaurant
-      MYSQL_PASSWORD: restaurant
-      MYSQL_DATABASE: restaurant
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
     ports:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          MYSQL_PWD="$${MARIADB_PASSWORD}" mariadb --protocol=TCP
+          --host=127.0.0.1 --user="$${MARIADB_USER}"
+          --database="$${MARIADB_DATABASE}" --execute="SELECT 1" --silent >/dev/null
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 12
     networks:
       - my-network
 
@@ -20,14 +31,19 @@ services:
     build: ./backend
     container_name: mybe
     restart: unless-stopped
+    mem_limit: 1g
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/restaurant
-      SPRING_DATASOURCE_USERNAME: restaurant
-      SPRING_DATASOURCE_PASSWORD: restaurant
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS:--Xms128m -XX:MaxRAMPercentage=60.0}
     ports:
       - "8080:8080"
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - my-network
 
@@ -37,14 +53,17 @@ services:
     container_name: myfe
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "3000:80"
     depends_on:
-      - be
+      be:
+        condition: service_healthy
+        restart: true
     networks:
       - my-network
 
 volumes:
   db_data:
+  uploads_data:
 
 networks:
   my-network:
