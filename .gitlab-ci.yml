@@ -16,7 +16,8 @@ buildandpush:
     - docker compose build --parallel --pull
     - docker compose push be fe
   after_script:
-    - docker compose rmi -f be fe
+    - docker rmi -f ${REGISTRY_URL}/${REGISTRY_USER}/${REGISTRY_PROJECT}-be:${IMAGE_TAG}
+    - docker rmi -f ${REGISTRY_URL}/${REGISTRY_USER}/${REGISTRY_PROJECT}-fe:${IMAGE_TAG}
   tags:
     - Control
   only:
