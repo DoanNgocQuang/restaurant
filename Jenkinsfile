@@ -1,19 +1,28 @@
-pipelines{
-    agent any
-    stages{
-        stage('Build'){
-            steps{
-                echo 'Building...'
+pipeline {
+    agent { label 'control' }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
             }
         }
-        stage('Test'){
-            steps{
-                echo 'Testing...'
+
+        stage('Build') {
+            steps {
+                sh 'echo Building...'
             }
         }
-        stage('Deploy'){
-            steps{
-                echo 'Deploying...'
+
+        stage('Test') {
+            steps {
+                sh 'echo Testing...'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'echo Deploying...'
             }
         }
     }
