@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
     mem_limit: 1g
     environment:
-      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DB_NAME}
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       JAVA_TOOL_OPTIONS: ${JAVA_TOOL_OPTIONS}
