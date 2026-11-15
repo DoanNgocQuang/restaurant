@@ -27,13 +27,13 @@ pipeline {
         REGISTRY_USER = "${DOCKERHUB_USR}"
         REGISTRY_URL = 'docker.io'
         REGISTRY_PROJECT = 'restaurant'
-        DO_DEPLOY = 'false'
     }
 
     stages {
         stage('Prepare') {
             steps {
                 script {
+                    env.DO_DEPLOY = 'false'
                     if (params.ACTION == 'build') {
                         def ref = env.gitlabSourceBranch ?: ''
                         if (!ref.startsWith('refs/tags/')) {
@@ -123,6 +123,7 @@ pipeline {
 
                     env.DO_DEPLOY =
                         decision == 'Deploy' ? 'true' : 'false'
+                    echo "Decision: ${decision}; DO_DEPLOY: ${env.DO_DEPLOY}"
                 }
             }
         }
