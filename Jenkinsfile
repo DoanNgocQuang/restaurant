@@ -33,6 +33,11 @@ pipeline {
             steps {
                 script {
                     if (params.ACTION == 'build') {
+                        def ref = env.gitlabSourceBranch ?: ''
+                        if (!ref.startsWith('refs/tags/')) {
+                            error 'Build requires a GitLab tag webhook'
+                        }
+                        def version = ref.substring('refs/tags/'.length())
                         def sha = sh(
                             script: 'git rev-parse --short=8 HEAD',
                             returnStdout: true
