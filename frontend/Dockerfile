@@ -11,7 +11,7 @@ COPY client ./client
 COPY admin ./admin
 RUN cd client && npm run build
 
-##runtime stage
+##run stage
 FROM nginx:stable-alpine
 
 COPY --from=build /app/client/dist /usr/share/nginx/html

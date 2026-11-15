@@ -166,6 +166,17 @@ Kiểm tra ảnh cũ qua `/uploads/...`, upload ảnh mới và kiểm tra ảnh
 
 ## CI/CD
 
+### Jenkins
+
+- Tạo Pipeline from SCM, chọn repository này và Script Path là `Jenkinsfile`.
+- Dùng agent Linux có label `docker`, cài Git, Docker với BuildKit và Docker Compose v2.20 trở lên. User chạy Jenkins cần quyền truy cập Docker daemon. Không cần cài Java/Node trên agent vì Dockerfile đã có build stage.
+- Tạo credential **Secret file** ID `restaurant-env`: tải lên file theo `.env.example`, điền `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_ROOT_PASSWORD` đúng với database. Không commit file chứa mật khẩu.
+- Tạo credential **Username with password** ID `restaurant-registry`: username và password/access token dùng để push image. Cách bind credentials tham khảo [Jenkins documentation](https://www.jenkins.io/doc/book/pipeline/jenkinsfile/#handling-credentials).
+- Khi chạy **Build with Parameters**, nhập `REGISTRY_URL` (mặc định `docker.io`), `REGISTRY_USER` (namespace sở hữu image), `REGISTRY_PROJECT` và `COMPOSE_PROJECT_NAME`. Các tham số này và `IMAGE_TAG` do pipeline sinh sẽ ghi đè giá trị tương ứng trong secret file.
+- Pipeline kiểm tra Compose, build và push image `be`/`fe` với tag `<BUILD_NUMBER>-<commit SHA>`. Backend hiện bỏ qua test theo Dockerfile; frontend chạy `npm ci` và `npm run build`.
+- `DEPLOY` mặc định tắt. Bật để chạy Compose trên **chính Docker host của agent** và chờ healthy tối đa 240 giây. Dùng agent cố định trên server đích; `COMPOSE_PROJECT_NAME` phải trùng project của stack hiện có để dùng lại đúng volume. Chỉ một Jenkins job quản lý stack này; không chạy deploy đồng thời từ GitLab/job khác.
+- Pipeline không tự rollback khi deploy lỗi. Nó giữ volume và in trạng thái container để kiểm tra.
+
 Dự án có sẵn các file cấu hình CI/CD:
 
 - `Jenkinsfile`: cấu hình pipeline cho Jenkins
@@ -177,7 +188,7 @@ Image giữ định dạng `${REGISTRY_URL}/${REGISTRY_USER}/${REGISTRY_PROJECT}
 
 Registry login dùng `--password-stdin`. Deploy vẫn kích hoạt thủ công và được tuần tự hóa bằng resource group; runner phải dùng đúng Compose project của stack hiện có.
 
-Deploy pull image và cập nhật service, chờ healthy tối đa 240 giây. Job lỗi nếu không healthy, in trạng thái/log; không tự rollback, không chạy `down`, không import SQL hay prune image toàn máy. `Jenkinsfile` vẫn là khung minh họa.
+Deploy pull image và cập nhật service, chờ healthy tối đa 240 giây. Job lỗi nếu không healthy, in trạng thái/log; không tự rollback, không chạy `down`, không import SQL hay prune image toàn máy. Cấu hình Jenkins được mô tả ở mục Jenkins phía trên.
 
 ### Cập nhật base image
 

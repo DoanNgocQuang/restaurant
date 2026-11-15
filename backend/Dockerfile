@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+#build stage
 FROM maven:3.9.13-eclipse-temurin-25-alpine AS build
 
 WORKDIR /app
@@ -12,6 +12,7 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.m2,sharing=locked \
     mvn -B -ntp package -Dmaven.test.skip=true
 
+#runtime stage
 FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
