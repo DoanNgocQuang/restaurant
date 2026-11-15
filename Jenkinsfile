@@ -22,9 +22,11 @@ pipeline {
     }
 
     environment {
+        COMPOSE_ENV = credentials('restaurant-env')
+        DOCKERHUB = credentials('dockerhub')
+        REGISTRY_USER = "${DOCKERHUB_USR}"
         REGISTRY_URL = 'docker.io'
         REGISTRY_PROJECT = 'restaurant'
-        DEPLOY_DIR = '/opt/restaurant'
         DO_DEPLOY = 'false'
     }
 
@@ -64,20 +66,13 @@ pipeline {
             }
 
             steps {
-                withCredentials([
-                    file(
-                        credentialsId: 'restaurant-env',
-                        variable: 'COMPOSE_ENV'
-                    )
-                ]) {
-                    sh '''
-                        set -eu
+                sh '''
+                    set -eu
 
-                        docker compose \
-                            --env-file "$COMPOSE_ENV" \
-                            build --parallel --pull be fe
-                    '''
-                }
+                    docker compose \
+                        --env-file "$COMPOSE_ENV" \
+                        build --parallel --pull be fe
+                '''
             }
         }
 
@@ -87,35 +82,23 @@ pipeline {
             }
 
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub',
-                        usernameVariable: 'REGISTRY_USER',
-                        passwordVariable: 'REGISTRY_PASSWORD'
-                    ),
-                    file(
-                        credentialsId: 'restaurant-env',
-                        variable: 'COMPOSE_ENV'
-                    )
-                ]) {
-                    sh '''
-                        set -eu
-                        set +x
+                sh '''
+                    set -eu
+                    set +x
 
-                        DOCKER_CONFIG="$(mktemp -d)"
-                        export DOCKER_CONFIG
-                        trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+                    DOCKER_CONFIG="$(mktemp -d)"
+                    export DOCKER_CONFIG
+                    trap 'rm -rf "$DOCKER_CONFIG"' EXIT
 
-                        printf '%s' "$REGISTRY_PASSWORD" |
-                            docker login "$REGISTRY_URL" \
-                                -u "$REGISTRY_USER" \
-                                --password-stdin
+                    printf '%s' "$DOCKERHUB_PSW" |
+                        docker login "$REGISTRY_URL" \
+                            -u "$REGISTRY_USER" \
+                            --password-stdin
 
-                        docker compose \
-                            --env-file "$COMPOSE_ENV" \
-                            push be fe
-                    '''
-                }
+                    docker compose \
+                        --env-file "$COMPOSE_ENV" \
+                        push be fe
+                '''
             }
         }
 
@@ -150,34 +133,24 @@ pipeline {
             }
 
             steps {
-                dir("${env.DEPLOY_DIR}") {
-                    withCredentials([
-                        usernamePassword(
-                            credentialsId: 'dockerhub',
-                            usernameVariable: 'REGISTRY_USER',
-                            passwordVariable: 'REGISTRY_PASSWORD'
-                        )
-                    ]) {
-                        sh '''
-                            set -eu
-                            set +x
+                sh '''
+                    set -eu
+                    set +x
 
-                            DOCKER_CONFIG="$(mktemp -d)"
-                            export DOCKER_CONFIG
-                            trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+                    DOCKER_CONFIG="$(mktemp -d)"
+                    export DOCKER_CONFIG
+                    trap 'rm -rf "$DOCKER_CONFIG"' EXIT
 
-                            printf '%s' "$REGISTRY_PASSWORD" |
-                                docker login "$REGISTRY_URL" \
-                                    -u "$REGISTRY_USER" \
-                                    --password-stdin
+                    printf '%s' "$DOCKERHUB_PSW" |
+                        docker login "$REGISTRY_URL" \
+                            -u "$REGISTRY_USER" \
+                            --password-stdin
 
-                            docker compose \
-                                --env-file .env \
-                                -p restaurant \
-                                pull be fe
-                        '''
-                    }
-                }
+                    docker compose \
+                        --env-file "$COMPOSE_ENV" \
+                        -p restaurant \
+                        pull be fe
+                '''
             }
         }
 
@@ -187,16 +160,14 @@ pipeline {
             }
 
             steps {
-                dir("${env.DEPLOY_DIR}") {
-                    sh '''
-                        set -eu
+                sh '''
+                    set -eu
 
-                        docker compose \
-                            --env-file .env \
-                            -p restaurant \
-                            up -d --no-build
-                    '''
-                }
+                    docker compose \
+                        --env-file "$COMPOSE_ENV" \
+                        -p restaurant \
+                        up -d --no-build
+                '''
             }
         }
 
